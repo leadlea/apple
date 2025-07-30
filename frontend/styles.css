@@ -1,0 +1,254 @@
+/* Apple Design System Variables */
+:root {
+  --apple-blue: #007AFF;
+  --apple-gray: #8E8E93;
+  --apple-light-gray: #F2F2F7;
+  --apple-dark-gray: #1C1C1E;
+  --apple-green: #34C759;
+  --apple-red: #FF3B30;
+  --apple-background: #FFFFFF;
+  --apple-secondary-background: #F2F2F7;
+  --apple-border: #C6C6C8;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+  --font-size-large: 28px;
+  --font-size-medium: 17px;
+  --font-size-small: 15px;
+  --font-size-caption: 13px;
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  
+  /* Border Radius */
+  --border-radius-sm: 8px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 20px;
+}
+
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--apple-background);
+  color: var(--apple-dark-gray);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.app-header {
+  background-color: var(--apple-background);
+  border-bottom: 1px solid var(--apple-border);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.app-header h1 {
+  font-size: var(--font-size-large);
+  font-weight: 700;
+  color: var(--apple-dark-gray);
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-small);
+  color: var(--apple-gray);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--apple-gray);
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.connected {
+  background-color: var(--apple-green);
+}
+
+.status-indicator.disconnected {
+  background-color: var(--apple-red);
+}
+
+/* Chat Container */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.welcome-message {
+  text-align: center;
+  padding: var(--spacing-xl);
+  color: var(--apple-gray);
+  font-size: var(--font-size-medium);
+}
+
+.message {
+  max-width: 70%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-medium);
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+
+.message.user {
+  align-self: flex-end;
+  background-color: var(--apple-blue);
+  color: white;
+  border-bottom-right-radius: var(--spacing-sm);
+}
+
+.message.assistant {
+  align-self: flex-start;
+  background-color: var(--apple-light-gray);
+  color: var(--apple-dark-gray);
+  border-bottom-left-radius: var(--spacing-sm);
+}
+
+/* Input Container */
+.input-container {
+  padding: var(--spacing-lg);
+  background-color: var(--apple-background);
+  border-top: 1px solid var(--apple-border);
+}
+
+.message-input-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--apple-secondary-background);
+  border-radius: var(--border-radius-xl);
+  padding: var(--spacing-sm);
+  gap: var(--spacing-sm);
+}
+
+#messageInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: var(--spacing-md);
+  font-size: var(--font-size-medium);
+  font-family: var(--font-family);
+  color: var(--apple-dark-gray);
+  outline: none;
+}
+
+#messageInput::placeholder {
+  color: var(--apple-gray);
+}
+
+#sendButton {
+  background-color: var(--apple-blue);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#sendButton:hover {
+  background-color: #0056CC;
+  transform: scale(1.05);
+}
+
+#sendButton:active {
+  transform: scale(0.95);
+}
+
+#sendButton:disabled {
+  background-color: var(--apple-gray);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-header {
+    padding: var(--spacing-md);
+  }
+  
+  .app-header h1 {
+    font-size: 24px;
+  }
+  
+  .messages {
+    padding: var(--spacing-md);
+  }
+  
+  .message {
+    max-width: 85%;
+  }
+  
+  .input-container {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --apple-background: #000000;
+    --apple-secondary-background: #1C1C1E;
+    --apple-light-gray: #2C2C2E;
+    --apple-border: #38383A;
+    --apple-dark-gray: #FFFFFF;
+    --apple-gray: #8E8E93;
+  }
+}
