@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac Status PWA Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status-card { border: 1px solid #ccc; padding: 10px; margin: 10px 0; border-radius: 8px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; font-family: monospace; }
+        .error { background: #ffebee; border-left: 4px solid #f44336; }
+        .success { background: #e8f5e8; border-left: 4px solid #4caf50; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Mac Status PWA Debug Test</h1>
+    
+    <div class="status-card">
+        <h3>接続状態</h3>
+        <div id="connectionStatus">未接続</div>
+    </div>
+    
+    <div class="status-card">
+        <h3>システム状態</h3>
+        <div>CPU: <span id="cpuValue">--</span></div>
+        <div>メモリ: <span id="memoryValue">--</span></div>
+        <div>ディスク: <span id="diskValue">--</span></div>
+    </div>
+    
+    <div class="status-card">
+        <h3>テスト</h3>
+        <button onclick="sendPing()">Ping送信</button>
+        <button onclick="requestSystemStatus()">システム状態要求</button>
+        <button onclick="sendChatMessage()">チャットメッセージ送信</button>
+        <button onclick="clearLogs()">ログクリア</button>
+    </div>
+    
+    <div class="status-card">
+        <h3>ログ</h3>
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        let websocket = null;
+        
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log ${type}`;
+            logDiv.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.appendChild(logDiv);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        function updateConnectionStatus(status) {
+            document.getElementById('connectionStatus').textContent = status;
+        }
+        
+        function updateSystemStatus(data) {
+            document.getElementById('cpuValue').textContent = data.cpu_percent + '%';
+            document.getElementById('memoryValue').textContent = data.memory_percent + '%';
+            document.getElementById('diskValue').textContent = data.disk_percent + '%';
+        }
+        
+        function connectWebSocket() {
+            try {
+                websocket = new WebSocket('ws://localhost:8002/ws');
+                
+                websocket.onopen = function(event) {
+                    log('WebSocket接続成功', 'success');
+                    updateConnectionStatus('接続済み');
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`受信: ${JSON.stringify(data, null, 2)}`);
+                        
+                        if (data.type === 'system_status_response' && data.data && data.data.system_status) {
+                            updateSystemStatus(data.data.system_status);
+                            log('システム状態を更新しました', 'success');
+                        } else if (data.type === 'system_status_update' && data.data) {
+                            updateSystemStatus(data.data);
+                            log('システム状態を更新しました（自動更新）', 'success');
+                        } else if (data.type === 'chat_response') {
+                            log(`チャット応答: ${data.data.message}`, 'success');
+                        } else if (data.type === 'pong') {
+                            log('Pong受信', 'success');
+                        }
+                    } catch (e) {
+                        log(`メッセージ解析エラー: ${e.message}`, 'error');
+                    }
+                };
+                
+                websocket.onerror = function(error) {
+                    log(`WebSocketエラー: ${error}`, 'error');
+                    updateConnectionStatus('エラー');
+                };
+                
+                websocket.onclose = function(event) {
+                    log(`WebSocket切断: ${event.code} - ${event.reason}`, 'error');
+                    updateConnectionStatus('切断');
+                };
+                
+            } catch (error) {
+                log(`接続エラー: ${error.message}`, 'error');
+            }
+        }
+        
+        function sendPing() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'ping',
+                    timestamp: new Date().toISOString()
+                };
+                websocket.send(JSON.stringify(message));
+                log(`送信: ${JSON.stringify(message)}`);
+            } else {
+                log('WebSocket未接続', 'error');
+            }
+        }
+        
+        function requestSystemStatus() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'system_status_request',
+                    timestamp: new Date().toISOString()
+                };
+                websocket.send(JSON.stringify(message));
+                log(`送信: ${JSON.stringify(message)}`);
+            } else {
+                log('WebSocket未接続', 'error');
+            }
+        }
+        
+        function sendChatMessage() {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'chat_message',
+                    message: 'CPUの使用率は？',
+                    timestamp: new Date().toISOString()
+                };
+                websocket.send(JSON.stringify(message));
+                log(`送信: ${JSON.stringify(message)}`);
+            } else {
+                log('WebSocket未接続', 'error');
+            }
+        }
+        
+        // 自動接続
+        window.onload = function() {
+            log('デバッグテスト開始');
+            connectWebSocket();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac Status PWA - Fixed</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="app-header">
+            <h1>Mac Status</h1>
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-indicator"></span>
+                <span class="status-text">接続中...</span>
+            </div>
+        </header>
+        
+        <main class="chat-container">
+            <!-- System Status Display -->
+            <div class="system-status-container" id="systemStatusContainer">
+                <div class="status-cards">
+                    <div class="status-card cpu-card" id="cpuCard">
+                        <div class="status-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/>
+                                <path d="M9 1V3M15 1V3M9 21V23M15 21V23M1 9H3M1 15H3M21 9H23M21 15H23" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="status-content">
+                            <div class="status-label">CPU</div>
+                            <div class="status-value" id="cpuValue">--</div>
+                            <div class="status-bar">
+                                <div class="status-bar-fill" id="cpuBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card memory-card" id="memoryCard">
+                        <div class="status-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                                <path d="M7 8V16M11 8V16M15 8V16M17 8V16" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="status-content">
+                            <div class="status-label">メモリ</div>
+                            <div class="status-value" id="memoryValue">--</div>
+                            <div class="status-bar">
+                                <div class="status-bar-fill" id="memoryBar" style="width: 0%"></div>
+                            </div>
+                            <div class="status-detail" id="memoryDetail">-- / --</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card disk-card" id="diskCard">
+                        <div class="status-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <div class="status-content">
+                            <div class="status-label">ディスク</div>
+                            <div class="status-value" id="diskValue">--</div>
+                            <div class="status-bar">
+                                <div class="status-bar-fill" id="diskBar" style="width: 0%"></div>
+                            </div>
+                            <div class="status-detail" id="diskDetail">-- / --</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="messages-wrapper">
+                <div class="messages" id="messages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">👋</div>
+                        <h2>Mac Status アシスタント</h2>
+                        <p>こんにちは！Macのステータスについて何でも聞いてください。</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-container">
+                <div class="message-input-wrapper">
+                    <input type="text" id="messageInput" placeholder="メッセージを入力..." autocomplete="off" maxlength="500">
+                    <div class="input-actions">
+                        <button id="sendButton" type="button" class="send-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script>
+        // Simple and direct implementation
+        let websocket = null;
+        let isConnected = false;
+        
+        // DOM elements
+        const cpuValue = document.getElementById('cpuValue');
+        const memoryValue = document.getElementById('memoryValue');
+        const diskValue = document.getElementById('diskValue');
+        const cpuBar = document.getElementById('cpuBar');
+        const memoryBar = document.getElementById('memoryBar');
+        const diskBar = document.getElementById('diskBar');
+        const memoryDetail = document.getElementById('memoryDetail');
+        const diskDetail = document.getElementById('diskDetail');
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        function updateSystemStatus(data) {
+            console.log('Updating system status:', data);
+            
+            // Update CPU
+            if (data.cpu_percent !== undefined) {
+                const cpuPercent = Math.round(data.cpu_percent);
+                cpuValue.textContent = cpuPercent + '%';
+                cpuBar.style.width = cpuPercent + '%';
+                console.log('Updated CPU to:', cpuPercent + '%');
+            }
+            
+            // Update Memory
+            if (data.memory_percent !== undefined) {
+                const memoryPercent = Math.round(data.memory_percent);
+                memoryValue.textContent = memoryPercent + '%';
+                memoryBar.style.width = memoryPercent + '%';
+                
+                if (data.memory_used && data.memory_total) {
+                    const usedGB = (data.memory_used / (1024 ** 3)).toFixed(1);
+                    const totalGB = (data.memory_total / (1024 ** 3)).toFixed(1);
+                    memoryDetail.textContent = usedGB + 'GB / ' + totalGB + 'GB';
+                }
+                console.log('Updated Memory to:', memoryPercent + '%');
+            }
+            
+            // Update Disk
+            if (data.disk_percent !== undefined) {
+                const diskPercent = Math.round(data.disk_percent);
+                diskValue.textContent = diskPercent + '%';
+                diskBar.style.width = diskPercent + '%';
+                
+                if (data.disk_used && data.disk_total) {
+                    const usedGB = (data.disk_used / (1024 ** 3)).toFixed(0);
+                    const totalGB = (data.disk_total / (1024 ** 3)).toFixed(0);
+                    diskDetail.textContent = usedGB + 'GB / ' + totalGB + 'GB';
+                }
+                console.log('Updated Disk to:', diskPercent + '%');
+            }
+        }
+        
+        function addMessage(content, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + role;
+            messageDiv.innerHTML = '<div class="message-content">' + content + '</div>';
+            
+            // Remove welcome message if it exists
+            const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        function connectWebSocket() {
+            try {
+                websocket = new WebSocket('ws://localhost:8002/ws');
+                
+                websocket.onopen = function(event) {
+                    console.log('WebSocket connected');
+                    isConnected = true;
+                    connectionStatus.querySelector('.status-text').textContent = '接続済み';
+                    connectionStatus.querySelector('.status-indicator').classList.add('connected');
+                };
+                
+                websocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Received:', data);
+                        
+                        if (data.type === 'system_status_response' && data.data && data.data.system_status) {
+                            updateSystemStatus(data.data.system_status);
+                        } else if (data.type === 'system_status_update' && data.data) {
+                            updateSystemStatus(data.data);
+                        } else if (data.type === 'chat_response' && data.data && data.data.message) {
+                            addMessage(data.data.message, 'assistant');
+                        }
+                    } catch (e) {
+                        console.error('Error parsing message:', e);
+                    }
+                };
+                
+                websocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    connectionStatus.querySelector('.status-text').textContent = 'エラー';
+                };
+                
+                websocket.onclose = function(event) {
+                    console.log('WebSocket closed');
+                    isConnected = false;
+                    connectionStatus.querySelector('.status-text').textContent = '切断';
+                    connectionStatus.querySelector('.status-indicator').classList.remove('connected');
+                };
+                
+            } catch (error) {
+                console.error('WebSocket connection error:', error);
+            }
+        }
+        
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && websocket && websocket.readyState === WebSocket.OPEN) {
+                const messageData = {
+                    type: 'chat_message',
+                    message: message,
+                    timestamp: new Date().toISOString()
+                };
+                
+                websocket.send(JSON.stringify(messageData));
+                addMessage(message, 'user');
+                messageInput.value = '';
+            }
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, connecting WebSocket...');
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

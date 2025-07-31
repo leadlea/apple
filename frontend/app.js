@@ -32,6 +32,16 @@ class SystemStatusDisplay {
         this.diskValue = document.getElementById('diskValue');
         this.diskBar = document.getElementById('diskBar');
         this.diskDetail = document.getElementById('diskDetail');
+        
+        // Debug: Check if elements are found
+        console.log('SystemStatusDisplay elements:', {
+            cpuValue: this.cpuValue,
+            memoryValue: this.memoryValue,
+            diskValue: this.diskValue,
+            cpuBar: this.cpuBar,
+            memoryBar: this.memoryBar,
+            diskBar: this.diskBar
+        });
     }
     
     setupEventListeners() {
@@ -49,15 +59,22 @@ class SystemStatusDisplay {
     }
     
     updateStatus(statusData) {
-        if (!statusData) return;
+        console.log('SystemStatusDisplay.updateStatus called with:', statusData);
+        if (!statusData) {
+            console.log('No status data provided');
+            return;
+        }
         
         // Update CPU
+        console.log('Updating CPU:', statusData.cpu_percent);
         this.updateCPU(statusData.cpu_percent);
         
         // Update Memory
+        console.log('Updating Memory:', statusData.memory_percent);
         this.updateMemory(statusData.memory_percent, statusData.memory_used, statusData.memory_total);
         
         // Update Disk
+        console.log('Updating Disk:', statusData.disk_percent);
         this.updateDisk(statusData.disk_percent, statusData.disk_used, statusData.disk_total);
         
         // Store last status for change detection
@@ -65,8 +82,16 @@ class SystemStatusDisplay {
     }
     
     updateCPU(cpuPercent) {
+        console.log('updateCPU called with:', cpuPercent);
+        if (cpuPercent === undefined || cpuPercent === null) {
+            console.log('Invalid CPU percent value');
+            return;
+        }
+        
         const value = Math.round(cpuPercent);
         const oldValue = this.cpuValue.textContent.replace('%', '');
+        
+        console.log('Setting CPU value to:', `${value}%`);
         
         // Update value with animation
         this.animateValueChange(this.cpuValue, `${value}%`, oldValue !== value.toString());
@@ -1006,6 +1031,8 @@ class MacStatusApp {
     handleIncomingMessage(data) {
         this.hideTypingIndicator();
         
+        console.log('Received message:', data);
+        
         if (data.type === 'chat_response') {
             this.displayMessage(data.data.content || data.data.message, 'assistant');
             
@@ -1020,10 +1047,26 @@ class MacStatusApp {
         } else if (data.type === 'system_status_update') {
             // Handle system status updates
             console.log('System status update:', data);
+            console.log('StatusDisplay object:', this.statusDisplay);
+            if (data.data) {
+                console.log('Calling statusDisplay.updateStatus with:', data.data);
+                this.lastSystemStatus = data.data;
+                this.cacheOfflineData('system_status', data.data);
+                this.statusDisplay.updateStatus(data.data);
+            } else {
+                console.log('No data found in system_status_update');
+            }
+        } else if (data.type === 'system_status_response') {
+            // Handle system status response
+            console.log('System status response:', data);
+            console.log('StatusDisplay object:', this.statusDisplay);
             if (data.data && data.data.system_status) {
+                console.log('Calling statusDisplay.updateStatus with:', data.data.system_status);
                 this.lastSystemStatus = data.data.system_status;
                 this.cacheOfflineData('system_status', data.data.system_status);
                 this.statusDisplay.updateStatus(data.data.system_status);
+            } else {
+                console.log('No system_status data found in response');
             }
         } else if (data.type === 'pong') {
             // Handle pong response
