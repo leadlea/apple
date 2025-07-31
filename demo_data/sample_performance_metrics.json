@@ -1,0 +1,554 @@
+[
+  {
+    "timestamp": "2025-07-31T13:07:27.748284",
+    "response_times": {
+      "system_info_avg": 0.414,
+      "chat_response_avg": 2.759,
+      "websocket_ping_avg": 0.04
+    },
+    "memory_usage": {
+      "application_mb": 381.2,
+      "model_mb": 2778.7,
+      "total_mb": 3715.4
+    },
+    "request_counts": {
+      "system_status_requests": 154,
+      "chat_messages": 49,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.99,
+      "chat_response_errors": 0.97,
+      "websocket_errors": 0.3
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748312",
+    "response_times": {
+      "system_info_avg": 0.246,
+      "chat_response_avg": 3.451,
+      "websocket_ping_avg": 0.044
+    },
+    "memory_usage": {
+      "application_mb": 249.1,
+      "model_mb": 2111.2,
+      "total_mb": 2980.3
+    },
+    "request_counts": {
+      "system_status_requests": 189,
+      "chat_messages": 25,
+      "websocket_connections": 2
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.9,
+      "chat_response_errors": 0.33,
+      "websocket_errors": 0.21
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748397",
+    "response_times": {
+      "system_info_avg": 0.28,
+      "chat_response_avg": 3.768,
+      "websocket_ping_avg": 0.011
+    },
+    "memory_usage": {
+      "application_mb": 393.1,
+      "model_mb": 2381.3,
+      "total_mb": 3914.0
+    },
+    "request_counts": {
+      "system_status_requests": 170,
+      "chat_messages": 58,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.88,
+      "chat_response_errors": 0.97,
+      "websocket_errors": 0.25
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748423",
+    "response_times": {
+      "system_info_avg": 0.18,
+      "chat_response_avg": 2.244,
+      "websocket_ping_avg": 0.027
+    },
+    "memory_usage": {
+      "application_mb": 290.9,
+      "model_mb": 3294.8,
+      "total_mb": 3141.9
+    },
+    "request_counts": {
+      "system_status_requests": 161,
+      "chat_messages": 50,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.87,
+      "chat_response_errors": 0.67,
+      "websocket_errors": 0.13
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748440",
+    "response_times": {
+      "system_info_avg": 0.474,
+      "chat_response_avg": 3.0,
+      "websocket_ping_avg": 0.039
+    },
+    "memory_usage": {
+      "application_mb": 172.6,
+      "model_mb": 2612.1,
+      "total_mb": 3411.0
+    },
+    "request_counts": {
+      "system_status_requests": 188,
+      "chat_messages": 52,
+      "websocket_connections": 2
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.41,
+      "chat_response_errors": 0.63,
+      "websocket_errors": 0.17
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748456",
+    "response_times": {
+      "system_info_avg": 0.219,
+      "chat_response_avg": 2.737,
+      "websocket_ping_avg": 0.044
+    },
+    "memory_usage": {
+      "application_mb": 229.3,
+      "model_mb": 2247.6,
+      "total_mb": 2691.2
+    },
+    "request_counts": {
+      "system_status_requests": 165,
+      "chat_messages": 27,
+      "websocket_connections": 2
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.44,
+      "chat_response_errors": 0.03,
+      "websocket_errors": 0.41
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748473",
+    "response_times": {
+      "system_info_avg": 0.182,
+      "chat_response_avg": 2.762,
+      "websocket_ping_avg": 0.04
+    },
+    "memory_usage": {
+      "application_mb": 173.8,
+      "model_mb": 3278.5,
+      "total_mb": 3800.4
+    },
+    "request_counts": {
+      "system_status_requests": 158,
+      "chat_messages": 61,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.45,
+      "chat_response_errors": 0.98,
+      "websocket_errors": 0.2
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748488",
+    "response_times": {
+      "system_info_avg": 0.159,
+      "chat_response_avg": 2.204,
+      "websocket_ping_avg": 0.022
+    },
+    "memory_usage": {
+      "application_mb": 235.9,
+      "model_mb": 3170.8,
+      "total_mb": 3115.1
+    },
+    "request_counts": {
+      "system_status_requests": 161,
+      "chat_messages": 36,
+      "websocket_connections": 4
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.84,
+      "chat_response_errors": 0.36,
+      "websocket_errors": 0.04
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748503",
+    "response_times": {
+      "system_info_avg": 0.356,
+      "chat_response_avg": 3.07,
+      "websocket_ping_avg": 0.049
+    },
+    "memory_usage": {
+      "application_mb": 231.1,
+      "model_mb": 2288.4,
+      "total_mb": 3001.2
+    },
+    "request_counts": {
+      "system_status_requests": 99,
+      "chat_messages": 36,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.0,
+      "chat_response_errors": 0.11,
+      "websocket_errors": 0.21
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748517",
+    "response_times": {
+      "system_info_avg": 0.21,
+      "chat_response_avg": 4.155,
+      "websocket_ping_avg": 0.015
+    },
+    "memory_usage": {
+      "application_mb": 328.5,
+      "model_mb": 2194.4,
+      "total_mb": 3185.0
+    },
+    "request_counts": {
+      "system_status_requests": 94,
+      "chat_messages": 33,
+      "websocket_connections": 4
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.82,
+      "chat_response_errors": 0.55,
+      "websocket_errors": 0.41
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748531",
+    "response_times": {
+      "system_info_avg": 0.164,
+      "chat_response_avg": 2.411,
+      "websocket_ping_avg": 0.036
+    },
+    "memory_usage": {
+      "application_mb": 207.6,
+      "model_mb": 2931.4,
+      "total_mb": 3167.3
+    },
+    "request_counts": {
+      "system_status_requests": 59,
+      "chat_messages": 33,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.65,
+      "chat_response_errors": 0.63,
+      "websocket_errors": 0.1
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748546",
+    "response_times": {
+      "system_info_avg": 0.175,
+      "chat_response_avg": 2.545,
+      "websocket_ping_avg": 0.043
+    },
+    "memory_usage": {
+      "application_mb": 244.7,
+      "model_mb": 2646.5,
+      "total_mb": 3664.9
+    },
+    "request_counts": {
+      "system_status_requests": 171,
+      "chat_messages": 34,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.13,
+      "chat_response_errors": 0.53,
+      "websocket_errors": 0.13
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748560",
+    "response_times": {
+      "system_info_avg": 0.179,
+      "chat_response_avg": 3.525,
+      "websocket_ping_avg": 0.03
+    },
+    "memory_usage": {
+      "application_mb": 347.6,
+      "model_mb": 2599.3,
+      "total_mb": 2553.2
+    },
+    "request_counts": {
+      "system_status_requests": 190,
+      "chat_messages": 67,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.26,
+      "chat_response_errors": 0.95,
+      "websocket_errors": 0.05
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748574",
+    "response_times": {
+      "system_info_avg": 0.237,
+      "chat_response_avg": 4.058,
+      "websocket_ping_avg": 0.029
+    },
+    "memory_usage": {
+      "application_mb": 310.6,
+      "model_mb": 3480.0,
+      "total_mb": 2248.1
+    },
+    "request_counts": {
+      "system_status_requests": 78,
+      "chat_messages": 68,
+      "websocket_connections": 3
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.25,
+      "chat_response_errors": 0.32,
+      "websocket_errors": 0.36
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748588",
+    "response_times": {
+      "system_info_avg": 0.236,
+      "chat_response_avg": 4.263,
+      "websocket_ping_avg": 0.02
+    },
+    "memory_usage": {
+      "application_mb": 317.8,
+      "model_mb": 2534.3,
+      "total_mb": 3257.6
+    },
+    "request_counts": {
+      "system_status_requests": 168,
+      "chat_messages": 78,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.62,
+      "chat_response_errors": 0.62,
+      "websocket_errors": 0.02
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748602",
+    "response_times": {
+      "system_info_avg": 0.392,
+      "chat_response_avg": 4.499,
+      "websocket_ping_avg": 0.047
+    },
+    "memory_usage": {
+      "application_mb": 200.7,
+      "model_mb": 2560.6,
+      "total_mb": 3113.9
+    },
+    "request_counts": {
+      "system_status_requests": 82,
+      "chat_messages": 45,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.23,
+      "chat_response_errors": 0.68,
+      "websocket_errors": 0.04
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748616",
+    "response_times": {
+      "system_info_avg": 0.136,
+      "chat_response_avg": 2.205,
+      "websocket_ping_avg": 0.016
+    },
+    "memory_usage": {
+      "application_mb": 179.1,
+      "model_mb": 2257.2,
+      "total_mb": 3317.1
+    },
+    "request_counts": {
+      "system_status_requests": 61,
+      "chat_messages": 56,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.6,
+      "chat_response_errors": 0.35,
+      "websocket_errors": 0.3
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748631",
+    "response_times": {
+      "system_info_avg": 0.162,
+      "chat_response_avg": 4.41,
+      "websocket_ping_avg": 0.029
+    },
+    "memory_usage": {
+      "application_mb": 265.1,
+      "model_mb": 2817.6,
+      "total_mb": 3590.2
+    },
+    "request_counts": {
+      "system_status_requests": 148,
+      "chat_messages": 50,
+      "websocket_connections": 4
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.58,
+      "chat_response_errors": 0.29,
+      "websocket_errors": 0.15
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748651",
+    "response_times": {
+      "system_info_avg": 0.183,
+      "chat_response_avg": 4.466,
+      "websocket_ping_avg": 0.034
+    },
+    "memory_usage": {
+      "application_mb": 324.4,
+      "model_mb": 3173.2,
+      "total_mb": 2896.4
+    },
+    "request_counts": {
+      "system_status_requests": 59,
+      "chat_messages": 45,
+      "websocket_connections": 2
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.75,
+      "chat_response_errors": 0.11,
+      "websocket_errors": 0.08
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748666",
+    "response_times": {
+      "system_info_avg": 0.407,
+      "chat_response_avg": 4.301,
+      "websocket_ping_avg": 0.029
+    },
+    "memory_usage": {
+      "application_mb": 352.1,
+      "model_mb": 2078.0,
+      "total_mb": 2681.4
+    },
+    "request_counts": {
+      "system_status_requests": 73,
+      "chat_messages": 45,
+      "websocket_connections": 5
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.36,
+      "chat_response_errors": 0.59,
+      "websocket_errors": 0.49
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748680",
+    "response_times": {
+      "system_info_avg": 0.162,
+      "chat_response_avg": 3.774,
+      "websocket_ping_avg": 0.01
+    },
+    "memory_usage": {
+      "application_mb": 208.6,
+      "model_mb": 3006.6,
+      "total_mb": 3627.8
+    },
+    "request_counts": {
+      "system_status_requests": 100,
+      "chat_messages": 38,
+      "websocket_connections": 4
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.54,
+      "chat_response_errors": 0.24,
+      "websocket_errors": 0.24
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748694",
+    "response_times": {
+      "system_info_avg": 0.403,
+      "chat_response_avg": 4.368,
+      "websocket_ping_avg": 0.027
+    },
+    "memory_usage": {
+      "application_mb": 353.2,
+      "model_mb": 2530.5,
+      "total_mb": 2268.0
+    },
+    "request_counts": {
+      "system_status_requests": 131,
+      "chat_messages": 70,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.03,
+      "chat_response_errors": 0.43,
+      "websocket_errors": 0.35
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748708",
+    "response_times": {
+      "system_info_avg": 0.224,
+      "chat_response_avg": 4.395,
+      "websocket_ping_avg": 0.028
+    },
+    "memory_usage": {
+      "application_mb": 379.5,
+      "model_mb": 2375.5,
+      "total_mb": 2657.1
+    },
+    "request_counts": {
+      "system_status_requests": 56,
+      "chat_messages": 73,
+      "websocket_connections": 1
+    },
+    "error_rates": {
+      "system_monitoring_errors": 0.68,
+      "chat_response_errors": 0.86,
+      "websocket_errors": 0.23
+    }
+  },
+  {
+    "timestamp": "2025-07-31T13:07:27.748721",
+    "response_times": {
+      "system_info_avg": 0.147,
+      "chat_response_avg": 2.873,
+      "websocket_ping_avg": 0.032
+    },
+    "memory_usage": {
+      "application_mb": 170.4,
+      "model_mb": 2562.9,
+      "total_mb": 2909.3
+    },
+    "request_counts": {
+      "system_status_requests": 60,
+      "chat_messages": 50,
+      "websocket_connections": 5
+    },
+    "error_rates": {
+      "system_monitoring_errors": 1.16,
+      "chat_response_errors": 0.8,
+      "websocket_errors": 0.38
+    }
+  }
+]

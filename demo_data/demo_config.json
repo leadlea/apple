@@ -1,0 +1,18 @@
+{
+  "demo_version": "1.0.0",
+  "created_at": "2025-07-31T13:07:27.750789",
+  "description": "Mac Status PWA demonstration data and configuration",
+  "files": {
+    "system_data": "sample_system_data.json",
+    "chat_history": "sample_chat_history.json",
+    "performance_metrics": "sample_performance_metrics.json",
+    "user_scenarios": "user_scenarios.json",
+    "screenshot_guide": "screenshot_preparation.json"
+  },
+  "demo_server_config": {
+    "host": "localhost",
+    "port": 8000,
+    "demo_mode": true,
+    "sample_data_enabled": true
+  }
+}

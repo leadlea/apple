@@ -1,0 +1,77 @@
+{
+  "screenshots_needed": [
+    {
+      "filename": "main_interface.png",
+      "description": "Main chat interface with Apple design",
+      "viewport": "1200x800",
+      "url": "http://localhost:8000",
+      "elements_to_highlight": [
+        "chat-container",
+        "system-status-card"
+      ]
+    },
+    {
+      "filename": "system_status.png",
+      "description": "System status display with real-time metrics",
+      "viewport": "1200x800",
+      "url": "http://localhost:8000",
+      "action": "click_system_status",
+      "elements_to_highlight": [
+        "cpu-usage",
+        "memory-usage",
+        "disk-usage"
+      ]
+    },
+    {
+      "filename": "chat_conversation.png",
+      "description": "Sample chat conversation with AI assistant",
+      "viewport": "1200x800",
+      "url": "http://localhost:8000",
+      "sample_messages": [
+        "\u30b7\u30b9\u30c6\u30e0\u306e\u72b6\u614b\u3092\u6559\u3048\u3066\u304f\u3060\u3055\u3044",
+        "\u30e1\u30e2\u30ea\u4f7f\u7528\u91cf\u304c\u6c17\u306b\u306a\u308a\u307e\u3059"
+      ]
+    },
+    {
+      "filename": "pwa_install.png",
+      "description": "PWA installation prompt",
+      "viewport": "1200x800",
+      "url": "http://localhost:8000",
+      "action": "trigger_install_prompt"
+    },
+    {
+      "filename": "mobile_view.png",
+      "description": "Mobile responsive design",
+      "viewport": "375x667",
+      "url": "http://localhost:8000",
+      "device": "iPhone"
+    },
+    {
+      "filename": "process_monitoring.png",
+      "description": "Process monitoring and analysis",
+      "viewport": "1200x800",
+      "url": "http://localhost:8000",
+      "sample_message": "\u30d7\u30ed\u30bb\u30b9\u306e\u72b6\u614b\u3092\u8a73\u3057\u304f\u6559\u3048\u3066\u304f\u3060\u3055\u3044"
+    }
+  ],
+  "screenshot_instructions": {
+    "tools_needed": [
+      "Playwright",
+      "Selenium",
+      "or manual screenshots"
+    ],
+    "preparation_steps": [
+      "Start the Mac Status PWA server",
+      "Ensure ELYZA model is loaded",
+      "Prepare sample data",
+      "Use consistent browser settings",
+      "Capture at different viewport sizes"
+    ],
+    "post_processing": [
+      "Crop to remove browser chrome",
+      "Add subtle shadows for presentation",
+      "Ensure consistent lighting/contrast",
+      "Optimize file sizes for web"
+    ]
+  }
+}

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status Display Test</title>
+    <link rel="stylesheet" href="frontend/styles.css">
+    <style>
+        body {
+            padding: 20px;
+            background: var(--apple-secondary-background);
+        }
+        .test-controls {
+            background: var(--apple-background);
+            border: 1px solid var(--apple-border);
+            border-radius: var(--border-radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+        }
+        .test-button {
+            background: var(--apple-blue);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin: var(--spacing-xs);
+            cursor: pointer;
+            font-family: var(--font-family-text);
+            font-size: var(--font-size-callout);
+            transition: all var(--timing-normal) var(--easing-standard);
+        }
+        .test-button:hover {
+            background: var(--apple-blue-dark);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h2>System Status Display Test</h2>
+        <p>Click the buttons below to test different system status scenarios:</p>
+        <button class="test-button" onclick="testNormalStatus()">Normal Status</button>
+        <button class="test-button" onclick="testHighUsage()">High Usage</button>
+        <button class="test-button" onclick="testCriticalUsage()">Critical Usage</button>
+        <button class="test-button" onclick="testAnimations()">Test Animations</button>
+        <button class="test-button" onclick="testToggle()">Toggle Display</button>
+    </div>
+
+    <!-- System Status Display -->
+    <div class="system-status-container" id="systemStatusContainer">
+        <div class="status-cards">
+            <div class="status-card cpu-card" id="cpuCard">
+                <div class="status-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="2"/>
+                        <path d="M9 1V3M15 1V3M9 21V23M15 21V23M1 9H3M1 15H3M21 9H23M21 15H23" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <div class="status-label">CPU</div>
+                    <div class="status-value" id="cpuValue">--</div>
+                    <div class="status-bar">
+                        <div class="status-bar-fill" id="cpuBar"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-card memory-card" id="memoryCard">
+                <div class="status-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M7 8V16M11 8V16M15 8V16M17 8V16" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <div class="status-label">メモリ</div>
+                    <div class="status-value" id="memoryValue">--</div>
+                    <div class="status-bar">
+                        <div class="status-bar-fill" id="memoryBar"></div>
+                    </div>
+                    <div class="status-detail" id="memoryDetail">-- / --</div>
+                </div>
+            </div>
+            
+            <div class="status-card disk-card" id="diskCard">
+                <div class="status-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div class="status-content">
+                    <div class="status-label">ディスク</div>
+                    <div class="status-value" id="diskValue">--</div>
+                    <div class="status-bar">
+                        <div class="status-bar-fill" id="diskBar"></div>
+                    </div>
+                    <div class="status-detail" id="diskDetail">-- / --</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-toggle" id="statusToggle">
+            <button class="toggle-btn" id="toggleBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M18 15L12 9L6 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Create a simplified version of the SystemStatusDisplay class for testing
+        class SystemStatusDisplay {
+            constructor() {
+                this.isCollapsed = false;
+                this.lastStatus = null;
+                this.animationTimeouts = new Map();
+                
+                this.initializeElements();
+                this.setupEventListeners();
+            }
+            
+            initializeElements() {
+                this.container = document.getElementById('systemStatusContainer');
+                this.toggleBtn = document.getElementById('toggleBtn');
+                
+                // CPU elements
+                this.cpuCard = document.getElementById('cpuCard');
+                this.cpuValue = document.getElementById('cpuValue');
+                this.cpuBar = document.getElementById('cpuBar');
+                
+                // Memory elements
+                this.memoryCard = document.getElementById('memoryCard');
+                this.memoryValue = document.getElementById('memoryValue');
+                this.memoryBar = document.getElementById('memoryBar');
+                this.memoryDetail = document.getElementById('memoryDetail');
+                
+                // Disk elements
+                this.diskCard = document.getElementById('diskCard');
+                this.diskValue = document.getElementById('diskValue');
+                this.diskBar = document.getElementById('diskBar');
+                this.diskDetail = document.getElementById('diskDetail');
+            }
+            
+            setupEventListeners() {
+                this.toggleBtn.addEventListener('click', () => this.toggleDisplay());
+            }
+            
+            toggleDisplay() {
+                this.isCollapsed = !this.isCollapsed;
+                
+                if (this.isCollapsed) {
+                    this.container.classList.add('collapsed');
+                } else {
+                    this.container.classList.remove('collapsed');
+                }
+            }
+            
+            updateStatus(statusData) {
+                if (!statusData) return;
+                
+                // Update CPU
+                this.updateCPU(statusData.cpu_percent);
+                
+                // Update Memory
+                this.updateMemory(statusData.memory_percent, statusData.memory_used, statusData.memory_total);
+                
+                // Update Disk
+                this.updateDisk(statusData.disk_percent, statusData.disk_used, statusData.disk_total);
+                
+                // Store last status for change detection
+                this.lastStatus = statusData;
+            }
+            
+            updateCPU(cpuPercent) {
+                const value = Math.round(cpuPercent);
+                const oldValue = this.cpuValue.textContent.replace('%', '');
+                
+                // Update value with animation
+                this.animateValueChange(this.cpuValue, `${value}%`, oldValue !== value.toString());
+                
+                // Update progress bar
+                this.cpuBar.style.width = `${value}%`;
+                
+                // Update card status based on usage
+                this.updateCardStatus(this.cpuCard, value, [70, 85]);
+                
+                // Update bar color based on usage
+                this.updateBarColor(this.cpuBar, value, [70, 85]);
+            }
+            
+            updateMemory(memoryPercent, memoryUsed, memoryTotal) {
+                const value = Math.round(memoryPercent);
+                const oldValue = this.memoryValue.textContent.replace('%', '');
+                
+                // Update value with animation
+                this.animateValueChange(this.memoryValue, `${value}%`, oldValue !== value.toString());
+                
+                // Update progress bar
+                this.memoryBar.style.width = `${value}%`;
+                
+                // Update detail text
+                const usedGB = (memoryUsed / (1024 ** 3)).toFixed(1);
+                const totalGB = (memoryTotal / (1024 ** 3)).toFixed(1);
+                this.memoryDetail.textContent = `${usedGB}GB / ${totalGB}GB`;
+                
+                // Update card status based on usage
+                this.updateCardStatus(this.memoryCard, value, [75, 90]);
+                
+                // Update bar color based on usage
+                this.updateBarColor(this.memoryBar, value, [75, 90]);
+            }
+            
+            updateDisk(diskPercent, diskUsed, diskTotal) {
+                const value = Math.round(diskPercent);
+                const oldValue = this.diskValue.textContent.replace('%', '');
+                
+                // Update value with animation
+                this.animateValueChange(this.diskValue, `${value}%`, oldValue !== value.toString());
+                
+                // Update progress bar
+                this.diskBar.style.width = `${value}%`;
+                
+                // Update detail text
+                const usedGB = (diskUsed / (1024 ** 3)).toFixed(1);
+                const totalGB = (diskTotal / (1024 ** 3)).toFixed(1);
+                this.diskDetail.textContent = `${usedGB}GB / ${totalGB}GB`;
+                
+                // Update card status based on usage
+                this.updateCardStatus(this.diskCard, value, [80, 95]);
+                
+                // Update bar color based on usage
+                this.updateBarColor(this.diskBar, value, [80, 95]);
+            }
+            
+            animateValueChange(element, newValue, hasChanged) {
+                if (hasChanged) {
+                    // Add changing class for animation
+                    element.classList.add('changing');
+                    
+                    // Clear existing timeout
+                    const timeoutKey = element.id;
+                    if (this.animationTimeouts.has(timeoutKey)) {
+                        clearTimeout(this.animationTimeouts.get(timeoutKey));
+                    }
+                    
+                    // Remove changing class after animation
+                    const timeout = setTimeout(() => {
+                        element.classList.remove('changing');
+                        this.animationTimeouts.delete(timeoutKey);
+                    }, 300);
+                    
+                    this.animationTimeouts.set(timeoutKey, timeout);
+                }
+                
+                element.textContent = newValue;
+            }
+            
+            updateCardStatus(card, value, thresholds) {
+                const [warningThreshold, criticalThreshold] = thresholds;
+                
+                // Remove existing status classes
+                card.classList.remove('warning', 'alert');
+                
+                if (value >= criticalThreshold) {
+                    card.classList.add('alert');
+                } else if (value >= warningThreshold) {
+                    card.classList.add('warning');
+                }
+            }
+            
+            updateBarColor(bar, value, thresholds) {
+                const [warningThreshold, criticalThreshold] = thresholds;
+                
+                // Remove existing color classes
+                bar.classList.remove('high-usage', 'critical-usage');
+                
+                if (value >= criticalThreshold) {
+                    bar.classList.add('critical-usage');
+                } else if (value >= warningThreshold) {
+                    bar.classList.add('high-usage');
+                }
+            }
+            
+            showError(message) {
+                // Show error state in status cards
+                [this.cpuValue, this.memoryValue, this.diskValue].forEach(element => {
+                    element.textContent = 'エラー';
+                });
+                
+                [this.cpuBar, this.memoryBar, this.diskBar].forEach(bar => {
+                    bar.style.width = '0%';
+                });
+                
+                this.memoryDetail.textContent = message || 'データを取得できません';
+                this.diskDetail.textContent = message || 'データを取得できません';
+            }
+        }
+
+        // Initialize the status display
+        const statusDisplay = new SystemStatusDisplay();
+
+        // Test functions
+        function testNormalStatus() {
+            const normalStatus = {
+                cpu_percent: 45.2,
+                memory_percent: 50.0,
+                memory_used: 8589934592,  // 8GB
+                memory_total: 17179869184, // 16GB
+                disk_percent: 20.0,
+                disk_used: 107374182400,  // 100GB
+                disk_total: 536870912000  // 500GB
+            };
+            statusDisplay.updateStatus(normalStatus);
+        }
+
+        function testHighUsage() {
+            const highStatus = {
+                cpu_percent: 78.5,
+                memory_percent: 82.3,
+                memory_used: 14073748480,  // 13.1GB
+                memory_total: 17179869184, // 16GB
+                disk_percent: 87.2,
+                disk_used: 468006400000,  // 436GB
+                disk_total: 536870912000  // 500GB
+            };
+            statusDisplay.updateStatus(highStatus);
+        }
+
+        function testCriticalUsage() {
+            const criticalStatus = {
+                cpu_percent: 92.1,
+                memory_percent: 96.7,
+                memory_used: 16616562688,  // 15.5GB
+                memory_total: 17179869184, // 16GB
+                disk_percent: 97.8,
+                disk_used: 525112320000,  // 489GB
+                disk_total: 536870912000  // 500GB
+            };
+            statusDisplay.updateStatus(criticalStatus);
+        }
+
+        function testAnimations() {
+            // Simulate rapid changes to test animations
+            const statuses = [
+                { cpu_percent: 25, memory_percent: 30, disk_percent: 15 },
+                { cpu_percent: 65, memory_percent: 70, disk_percent: 45 },
+                { cpu_percent: 35, memory_percent: 50, disk_percent: 25 },
+                { cpu_percent: 85, memory_percent: 90, disk_percent: 75 }
+            ];
+
+            statuses.forEach((status, index) => {
+                setTimeout(() => {
+                    statusDisplay.updateStatus({
+                        cpu_percent: status.cpu_percent,
+                        memory_percent: status.memory_percent,
+                        memory_used: status.memory_percent * 17179869184 / 100,
+                        memory_total: 17179869184,
+                        disk_percent: status.disk_percent,
+                        disk_used: status.disk_percent * 536870912000 / 100,
+                        disk_total: 536870912000
+                    });
+                }, index * 1000);
+            });
+        }
+
+        function testToggle() {
+            statusDisplay.toggleDisplay();
+        }
+
+        // Initialize with normal status
+        testNormalStatus();
+    </script>
+</body>
+</html>
