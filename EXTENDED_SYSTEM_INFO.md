@@ -721,4 +721,89 @@ class ConnectionManager:
         """全クライアントへのブロードキャスト"""
 ```
 
-この包括的な実装により、Mac Status PWAは高度で実用的なシステム監視ツールとして機能しています！ 🚀
+## 🤖 **チャット機能の改善（v2.1）**
+
+### **インテリジェント応答システム**
+```python
+# working_server.py で実装済み
+def generate_fallback_response(user_message: str, system_info: dict) -> str:
+    """ELYZAモデル未使用時の高品質フォールバック応答"""
+    
+    user_message_lower = user_message.lower()
+    
+    # キーワードベースの詳細応答
+    if "cpu" in user_message_lower or "プロセッサ" in user_message_lower:
+        # CPU詳細情報 + 上位プロセス + 状態評価
+        return generate_cpu_detailed_response(system_info)
+    
+    elif "メモリ" in user_message_lower or "memory" in user_message_lower:
+        # メモリ詳細情報 + 使用率評価 + 推奨事項
+        return generate_memory_detailed_response(system_info)
+    
+    elif "システム" in user_message_lower or "status" in user_message_lower:
+        # 包括的システム健康状態 + 問題検出
+        return generate_system_overview_response(system_info)
+    
+    else:
+        # 多様なデフォルト応答（ランダム選択）
+        return generate_varied_default_response(system_info)
+```
+
+### **応答品質の向上**
+
+#### **1. コンテキスト認識**
+- **質問内容の理解**: キーワード検出による適切な情報提供
+- **システム状態反映**: リアルタイムデータに基づく動的応答
+- **状態評価**: 正常/注意/警告レベルの自動判定
+
+#### **2. 応答の多様性**
+- **質問別最適化**: CPU、メモリ、ディスクなど特化した応答
+- **ランダム要素**: デフォルト応答の多様化
+- **詳細レベル調整**: 質問の具体性に応じた情報量
+
+#### **3. エラーハンドリング**
+- **フォールバック機能**: ELYZAモデル失敗時の代替応答
+- **接続安定性**: WebSocket切断時の自動復旧
+- **エラー情報**: 問題発生時の詳細ログ
+
+### **実際の改善例**
+
+#### **改善前**
+```
+ユーザー: "CPUの使用率は？"
+応答: "現在のシステム状況: CPU 25%, メモリ 68%, ディスク 45%"
+
+ユーザー: "メモリの状況は？"  
+応答: "現在のシステム状況: CPU 25%, メモリ 68%, ディスク 45%"
+```
+
+#### **改善後**
+```
+ユーザー: "CPUの使用率は？"
+応答: "🖥️ 現在のCPU使用率は 25.4% です。
+✅ CPU使用率は低く、システムに余裕があります。
+上位プロセス:
+1. Chrome: 8.2%
+2. Xcode: 3.1%"
+
+ユーザー: "メモリの状況は？"
+応答: "💾 現在のメモリ使用状況:
+使用率: 68.1%
+使用量: 10.9GB / 16.0GB
+空き容量: 5.1GB
+🟡 メモリ使用率がやや高めです。"
+```
+
+### **テスト・検証**
+```bash
+# チャット応答テスト
+python3 test_elyza_integration.py
+
+# WebSocket接続テスト  
+python3 simple_chat_test.py
+
+# 包括的チャット機能テスト
+python3 test_chat_responses.py
+```
+
+この包括的な実装により、Mac Status PWAは高度で実用的なシステム監視ツールとして機能し、ユーザーの質問に対して適切で多様な応答を提供できるようになりました！ 🚀

@@ -60,7 +60,7 @@ class PromptTemplate:
     style_modifiers: Dict[str, str]
 
 
-class JapanesePromptGenerator:
+class PromptGenerator:
     """
     Generates Japanese prompts for ELYZA model based on system data and conversation context
     """
@@ -1309,7 +1309,7 @@ class JapanesePromptGenerator:
 def create_status_check_prompt(system_data: Dict[str, Any], 
                              style: PromptStyle = PromptStyle.FRIENDLY) -> str:
     """Create a prompt for general status check"""
-    generator = JapanesePromptGenerator()
+    generator = PromptGenerator()
     context = ConversationContext(preferred_style=style)
     
     return generator.generate_system_prompt(
@@ -1322,7 +1322,7 @@ def create_status_check_prompt(system_data: Dict[str, Any],
 def create_performance_analysis_prompt(system_data: Dict[str, Any],
                                      performance_issues: List[str] = None) -> str:
     """Create a prompt for performance analysis"""
-    generator = JapanesePromptGenerator()
+    generator = PromptGenerator()
     context = ConversationContext(preferred_style=PromptStyle.TECHNICAL)
     
     query = "システムのパフォーマンスを分析してください"
@@ -1339,7 +1339,7 @@ def create_performance_analysis_prompt(system_data: Dict[str, Any],
 def create_troubleshooting_prompt(system_data: Dict[str, Any],
                                 issue_description: str) -> str:
     """Create a prompt for troubleshooting assistance"""
-    generator = JapanesePromptGenerator()
+    generator = PromptGenerator()
     context = ConversationContext(preferred_style=PromptStyle.PROFESSIONAL)
     
     query = f"次の問題について対処法を教えてください: {issue_description}"
@@ -1379,7 +1379,7 @@ async def test_prompt_generator():
         }
     }
     
-    generator = JapanesePromptGenerator()
+    generator = PromptGenerator()
     
     # Test different styles
     test_cases = [

@@ -2,6 +2,67 @@
 
 Mac Status PWAアプリケーションの一般的な問題の診断と解決方法を説明します。
 
+## 🤖 チャット機能の問題
+
+### 問題: チャット応答が同じ内容になる
+
+**症状**:
+- 異なる質問をしても同じような応答が返される
+- 応答が質問内容と関連していない
+
+**解決方法**:
+1. **サーバーの再起動**:
+   ```bash
+   # 既存のサーバープロセスを停止
+   pkill -f "python.*working_server"
+   
+   # サーバーを再起動
+   python3 working_server.py
+   ```
+
+2. **WebSocket接続の確認**:
+   ```bash
+   # WebSocket接続テスト
+   python3 simple_chat_test.py
+   ```
+
+3. **フォールバック機能の確認**:
+   ```bash
+   # チャット応答テスト
+   python3 test_elyza_integration.py
+   ```
+
+### 問題: チャット応答が生成されない
+
+**症状**:
+```
+WebSocket connection failed
+Empty response from server
+```
+
+**解決方法**:
+1. **サーバー状態の確認**:
+   ```bash
+   # サーバーが起動しているか確認
+   lsof -i :8002
+   
+   # ヘルスチェック
+   curl http://localhost:8002/health
+   ```
+
+2. **ログの確認**:
+   ```bash
+   # サーバーログを確認
+   python3 working_server.py
+   # エラーメッセージを確認
+   ```
+
+3. **WebSocket接続テスト**:
+   ```bash
+   # WebSocket接続の詳細テスト
+   python3 test_chat_responses.py
+   ```
+
 ## 🚨 クイック診断
 
 ### 包括的ヘルスチェック
