@@ -186,14 +186,20 @@
                 websocket.onmessage = function(event) {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('Received:', data);
+                        console.log('Received message type:', data.type);
+                        console.log('Full message data:', data);
                         
                         if (data.type === 'system_status_response' && data.data && data.data.system_status) {
+                            console.log('Processing system_status_response');
                             updateSystemStatus(data.data.system_status);
                         } else if (data.type === 'system_status_update' && data.data) {
+                            console.log('Processing system_status_update');
                             updateSystemStatus(data.data);
                         } else if (data.type === 'chat_response' && data.data && data.data.message) {
+                            console.log('Processing chat_response:', data.data.message);
                             addMessage(data.data.message, 'assistant');
+                        } else {
+                            console.log('Unhandled message type or missing data:', data.type);
                         }
                     } catch (e) {
                         console.error('Error parsing message:', e);
@@ -226,9 +232,14 @@
                     timestamp: new Date().toISOString()
                 };
                 
+                console.log('Sending chat message:', messageData);
                 websocket.send(JSON.stringify(messageData));
                 addMessage(message, 'user');
                 messageInput.value = '';
+            } else {
+                console.log('Cannot send message - WebSocket not ready or empty message');
+                console.log('WebSocket state:', websocket ? websocket.readyState : 'null');
+                console.log('Message:', message);
             }
         }
         

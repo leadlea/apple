@@ -162,8 +162,68 @@ def get_system_info():
             "error": str(e)
         }
 
-# Store connected clients
+# Store connected clients and conversation history
 connected_clients = set()
+conversation_history = {}  # websocket_id -> conversation data
+
+class ConversationManager:
+    def __init__(self):
+        self.conversations = {}
+    
+    def get_conversation(self, client_id):
+        if client_id not in self.conversations:
+            self.conversations[client_id] = {
+                'messages': [],
+                'user_preferences': {
+                    'politeness_level': 'polite',  # casual, polite, formal
+                    'preferred_topics': [],
+                    'question_patterns': {}
+                },
+                'session_start': datetime.now(),
+                'last_interaction': datetime.now()
+            }
+        return self.conversations[client_id]
+    
+    def add_message(self, client_id, role, content):
+        conv = self.get_conversation(client_id)
+        conv['messages'].append({
+            'role': role,
+            'content': content,
+            'timestamp': datetime.now()
+        })
+        conv['last_interaction'] = datetime.now()
+        
+        # Keep only last 20 messages to manage memory
+        if len(conv['messages']) > 20:
+            conv['messages'] = conv['messages'][-20:]
+    
+    def analyze_user_patterns(self, client_id, user_message):
+        conv = self.get_conversation(client_id)
+        
+        # Track question patterns
+        message_lower = user_message.lower()
+        for keyword in ['cpu', 'メモリ', 'ディスク', 'アプリ', 'バッテリー']:
+            if keyword in message_lower:
+                if keyword not in conv['user_preferences']['question_patterns']:
+                    conv['user_preferences']['question_patterns'][keyword] = 0
+                conv['user_preferences']['question_patterns'][keyword] += 1
+        
+        # Adjust politeness based on user's language style
+        if any(word in message_lower for word in ['ください', 'お願い', 'すみません']):
+            conv['user_preferences']['politeness_level'] = 'formal'
+        elif any(word in message_lower for word in ['？', '！', 'だよ', 'じゃん']):
+            conv['user_preferences']['politeness_level'] = 'casual'
+    
+    def get_context_for_response(self, client_id):
+        conv = self.get_conversation(client_id)
+        recent_messages = conv['messages'][-5:]  # Last 5 messages
+        return {
+            'recent_messages': recent_messages,
+            'preferences': conv['user_preferences'],
+            'session_duration': (datetime.now() - conv['session_start']).total_seconds() / 60
+        }
+
+conversation_manager = ConversationManager()
 
 async def broadcast_system_status():
     """Broadcast system status to all connected clients"""
@@ -211,9 +271,51 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
     disk_total_gb = system_info.get("disk_total", 1) / (1024**3)
     top_processes = system_info.get("processes", [])[:3]
     
-    # Generate contextual responses based on keywords
-    if "cpu" in user_message_lower or "プロセッサ" in user_message_lower or "使用率" in user_message_lower:
-        response_text = f"🖥️ 現在のCPU使用率は {cpu_usage}% です。\n\n"
+    # Enhanced keyword detection with more variations
+    def contains_keywords(text, keywords):
+        return any(keyword in text for keyword in keywords)
+    
+    # Enhanced keyword detection for more specific responses
+    
+    # Battery related questions with varied responses
+    if contains_keywords(user_message_lower, ["バッテリー", "battery", "電池", "充電"]):
+        import random
+        battery_responses = [
+            "🔋 申し訳ございませんが、現在バッテリー情報の取得機能は実装されていません。\n\nデスクトップMacの場合、バッテリー情報は利用できません。MacBookをお使いの場合は、システム環境設定 > バッテリーで確認できます。",
+            "🔋 バッテリー情報の取得機能は現在開発中です。\n\nMacBookをお使いの場合は、メニューバーのバッテリーアイコンをクリックするか、システム環境設定 > バッテリーで詳細を確認できます。",
+            "🔋 現在、バッテリー監視機能は実装されていません。\n\n充電状況を確認するには：\n• メニューバーのバッテリーアイコン\n• システム環境設定 > バッテリー\n• アクティビティモニタ > エネルギー"
+        ]
+        return random.choice(battery_responses)
+    
+    # Running apps/processes
+    elif contains_keywords(user_message_lower, ["アプリ", "app", "プロセス", "process", "実行中", "起動中", "動いている"]):
+        response_text = "📱 **現在実行中の主要なプロセス:**\n\n"
+        if top_processes:
+            for i, proc in enumerate(top_processes, 1):
+                cpu_val = proc.get('cpu_percent', 0) or 0
+                mem_val = proc.get('memory_percent', 0) or 0
+                response_text += f"**{i}. {proc['name']}**\n"
+                response_text += f"   🖥️ CPU: {cpu_val:.1f}% | 💾 メモリ: {mem_val:.1f}%\n\n"
+        else:
+            response_text += "プロセス情報を取得できませんでした。\n\n"
+        
+        response_text += f"📊 **システム全体の使用状況:**\n"
+        response_text += f"🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+        return response_text
+    
+    # Wi-Fi related questions with varied responses
+    elif contains_keywords(user_message_lower, ["wifi", "wi-fi", "ワイファイ", "無線", "ネット", "インターネット", "接続"]):
+        import random
+        wifi_responses = [
+            f"📶 申し訳ございませんが、現在Wi-Fi情報の取得機能は実装されていません。\n\nネットワーク接続状況は、システム環境設定 > ネットワークで確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+            f"📶 Wi-Fi詳細情報の取得機能は開発予定です。\n\n接続状況を確認するには：\n• システム環境設定 > ネットワーク\n• メニューバーのWi-Fiアイコン\n• ネットワークユーティリティ\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+            f"📶 現在、ネットワーク詳細監視機能は実装されていません。\n\nWi-Fi情報を確認するには、システム環境設定のネットワークセクションをご利用ください。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+        ]
+        return random.choice(wifi_responses)
+    
+    # CPU related questions
+    elif contains_keywords(user_message_lower, ["cpu", "プロセッサ", "使用率", "処理"]):
+        response_text = f"🖥️ **現在のCPU使用率は {cpu_usage}% です。**\n\n"
         if cpu_usage > 80:
             response_text += "⚠️ CPU使用率が高めです。重い処理が実行されている可能性があります。"
         elif cpu_usage > 50:
@@ -222,18 +324,18 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
             response_text += "✅ CPU使用率は低く、システムに余裕があります。"
         
         if top_processes:
-            response_text += f"\n\n上位プロセス:\n"
+            response_text += f"\n\n**上位プロセス:**\n"
             for i, proc in enumerate(top_processes, 1):
                 cpu_val = proc.get('cpu_percent', 0) or 0
-                response_text += f"{i}. {proc['name']}: {cpu_val:.1f}%\n"
+                response_text += f"**{i}.** {proc['name']}: {cpu_val:.1f}%\n"
         
         return response_text
     
-    elif "メモリ" in user_message_lower or "memory" in user_message_lower or "ram" in user_message_lower:
-        response_text = f"💾 現在のメモリ使用状況:\n\n"
-        response_text += f"使用率: {memory_percent}%\n"
-        response_text += f"使用量: {memory_used_gb:.1f}GB / {memory_total_gb:.1f}GB\n"
-        response_text += f"空き容量: {(memory_total_gb - memory_used_gb):.1f}GB\n\n"
+    elif contains_keywords(user_message_lower, ["メモリ", "memory", "ram", "使用量"]):
+        response_text = f"💾 **現在のメモリ使用状況:**\n\n"
+        response_text += f"📊 使用率: **{memory_percent}%**\n"
+        response_text += f"📈 使用量: **{memory_used_gb:.1f}GB** / {memory_total_gb:.1f}GB\n"
+        response_text += f"💿 空き容量: **{(memory_total_gb - memory_used_gb):.1f}GB**\n\n"
         
         if memory_percent > 85:
             response_text += "🔴 メモリ使用率が高いです。アプリケーションを閉じることを検討してください。"
@@ -244,11 +346,11 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
         
         return response_text
     
-    elif "ディスク" in user_message_lower or "disk" in user_message_lower or "storage" in user_message_lower:
-        response_text = f"💿 現在のディスク使用状況:\n\n"
-        response_text += f"使用率: {disk_percent}%\n"
-        response_text += f"使用量: {disk_used_gb:.0f}GB / {disk_total_gb:.0f}GB\n"
-        response_text += f"空き容量: {(disk_total_gb - disk_used_gb):.0f}GB\n\n"
+    elif contains_keywords(user_message_lower, ["ディスク", "disk", "storage", "容量"]):
+        response_text = f"💿 **現在のディスク使用状況:**\n\n"
+        response_text += f"📊 使用率: **{disk_percent}%**\n"
+        response_text += f"📈 使用量: **{disk_used_gb:.0f}GB** / {disk_total_gb:.0f}GB\n"
+        response_text += f"💿 空き容量: **{(disk_total_gb - disk_used_gb):.0f}GB**\n\n"
         
         if disk_percent > 90:
             response_text += "🔴 ディスク容量が不足しています。ファイルの整理が必要です。"
@@ -259,11 +361,11 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
         
         return response_text
     
-    elif "システム" in user_message_lower or "status" in user_message_lower or "全体" in user_message_lower or "状況" in user_message_lower:
-        response_text = f"📊 システム全体の状況\n\n"
-        response_text += f"🖥️ CPU: {cpu_usage}%\n"
-        response_text += f"💾 メモリ: {memory_percent}% ({memory_used_gb:.1f}GB/{memory_total_gb:.1f}GB)\n"
-        response_text += f"💿 ディスク: {disk_percent}% ({disk_used_gb:.0f}GB/{disk_total_gb:.0f}GB)\n\n"
+    elif contains_keywords(user_message_lower, ["システム", "status", "全体", "状況"]):
+        response_text = f"📊 **システム全体の状況**\n\n"
+        response_text += f"🖥️ CPU: **{cpu_usage}%**\n"
+        response_text += f"💾 メモリ: **{memory_percent}%** ({memory_used_gb:.1f}GB/{memory_total_gb:.1f}GB)\n"
+        response_text += f"💿 ディスク: **{disk_percent}%** ({disk_used_gb:.0f}GB/{disk_total_gb:.0f}GB)\n\n"
         
         # Overall health assessment
         issues = []
@@ -275,13 +377,13 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
             issues.append("ディスク容量不足")
         
         if issues:
-            response_text += f"⚠️ 注意事項: {', '.join(issues)}"
+            response_text += f"⚠️ **注意事項:** {', '.join(issues)}"
         else:
-            response_text += "✅ システムは正常に動作しています"
+            response_text += "✅ **システムは正常に動作しています**"
         
         return response_text
     
-    elif "こんにちは" in user_message_lower or "hello" in user_message_lower:
+    elif contains_keywords(user_message_lower, ["こんにちは", "hello", "はじめまして", "おはよう", "こんばんは"]):
         response_text = f"👋 こんにちは！Mac Status PWAへようこそ！\n\n"
         response_text += f"現在のシステム状況:\n"
         response_text += f"🖥️ CPU: {cpu_usage}%\n"
@@ -292,14 +394,233 @@ def generate_fallback_response(user_message: str, system_info: dict) -> str:
         return response_text
     
     else:
-        # Generate varied default responses
+        # Generate contextual responses based on question patterns
         import random
         
+        # Check if it's a question about specific functionality not yet implemented
+        if any(word in user_message_lower for word in ["温度", "temperature", "熱", "ファン", "fan"]):
+            import random
+            temp_responses = [
+                f"🌡️ 申し訳ございませんが、現在温度情報の取得機能は実装されていません。\n\nサードパーティアプリ（TG Pro、Macs Fan Control等）で温度監視が可能です。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌡️ 温度・ファン監視機能は今後の実装予定です。\n\n現在利用可能な温度監視方法：\n• TG Pro（App Store）\n• Macs Fan Control（無料）\n• iStat Menus（有料）\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌡️ システム温度の監視機能は開発中です。\n\n代替手段として、アクティビティモニタでCPU使用率から負荷状況を確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+            ]
+            return random.choice(temp_responses)
+        
+        elif any(word in user_message_lower for word in ["ネットワーク", "network", "通信", "速度", "帯域"]):
+            import random
+            network_responses = [
+                f"🌐 申し訳ございませんが、現在ネットワーク詳細情報の取得機能は実装されていません。\n\nネットワーク使用状況は、アクティビティモニタ > ネットワークタブで確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌐 ネットワーク速度・使用量監視機能は開発予定です。\n\n現在の確認方法：\n• アクティビティモニタ > ネットワーク\n• システム環境設定 > ネットワーク\n• ネットワークユーティリティ\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+            ]
+            return random.choice(network_responses)
+        
+        # Generate varied helpful responses
         responses = [
-            f"🤖 ご質問ありがとうございます。現在のシステム状況をお知らせします：\n🖥️ CPU: {cpu_usage}%\n💾 メモリ: {memory_percent}%\n💿 ディスク: {disk_percent}%",
-            f"📊 システム監視中です。現在の状態：\nCPU使用率: {cpu_usage}%\nメモリ使用率: {memory_percent}%\nディスク使用率: {disk_percent}%\n\n他に何かお聞きしたいことはありますか？",
-            f"🔍 システムをチェックしました。\n• CPU: {cpu_usage}% {'(正常)' if cpu_usage < 70 else '(高め)' if cpu_usage < 85 else '(注意)'}\n• メモリ: {memory_percent}% {'(正常)' if memory_percent < 75 else '(高め)' if memory_percent < 90 else '(注意)'}\n• ディスク: {disk_percent}% {'(正常)' if disk_percent < 80 else '(高め)' if disk_percent < 95 else '(注意)'}",
-            f"💻 Macの状態を確認しました。\nCPU: {cpu_usage}%、メモリ: {memory_percent}%、ディスク: {disk_percent}%\n\n詳しい情報が必要でしたら、「CPUの詳細」「メモリの詳細」などとお聞きください。"
+            f"🤖 ご質問ありがとうございます。現在のシステム状況をお知らせします：\n\n🖥️ CPU: {cpu_usage}%\n💾 メモリ: {memory_percent}%\n💿 ディスク: {disk_percent}%\n\n「CPUの詳細」「メモリの状況」「実行中のアプリ」などとお聞きください。",
+            f"📊 システム監視中です。現在の状態：\n\nCPU使用率: {cpu_usage}%\nメモリ使用率: {memory_percent}%\nディスク使用率: {disk_percent}%\n\n他に何かお聞きしたいことはありますか？",
+            f"🔍 システムをチェックしました。\n\n• CPU: {cpu_usage}% {'(正常)' if cpu_usage < 70 else '(高め)' if cpu_usage < 85 else '(注意)'}\n• メモリ: {memory_percent}% {'(正常)' if memory_percent < 75 else '(高め)' if memory_percent < 90 else '(注意)'}\n• ディスク: {disk_percent}% {'(正常)' if disk_percent < 80 else '(高め)' if disk_percent < 95 else '(注意)'}\n\n詳しい情報が必要でしたら、具体的にお聞きください。",
+            f"💻 Macの状態を確認しました。\n\nCPU: {cpu_usage}%、メモリ: {memory_percent}%、ディスク: {disk_percent}%\n\n「バッテリーは？」「Wi-Fiは？」「実行中のアプリは？」などとお聞きください。"
+        ]
+        
+        return random.choice(responses)
+
+def get_time_based_greeting():
+    """時間帯に応じた挨拶を取得"""
+    current_hour = datetime.now().hour
+    
+    if 5 <= current_hour < 10:
+        return "おはようございます"
+    elif 10 <= current_hour < 18:
+        return "こんにちは"
+    elif 18 <= current_hour < 22:
+        return "こんばんは"
+    else:
+        return "お疲れさまです"
+
+def generate_personalized_response(user_message: str, system_info: dict, context: dict = None) -> str:
+    """Generate personalized response based on user context and system info"""
+    
+    user_message_lower = user_message.lower()
+    
+    # Get current system metrics
+    cpu_usage = system_info.get("cpu_percent", 0)
+    memory_percent = system_info.get("memory_percent", 0)
+    memory_used_gb = system_info.get("memory_used", 0) / (1024**3)
+    memory_total_gb = system_info.get("memory_total", 1) / (1024**3)
+    disk_percent = system_info.get("disk_percent", 0)
+    disk_used_gb = system_info.get("disk_used", 0) / (1024**3)
+    disk_total_gb = system_info.get("disk_total", 1) / (1024**3)
+    top_processes = system_info.get("processes", [])[:3]
+    
+    # Get user context and preferences
+    politeness_level = 'polite'
+    recent_questions = []
+    session_duration = 0
+    
+    if context:
+        politeness_level = context.get('preferences', {}).get('politeness_level', 'polite')
+        recent_questions = [msg['content'] for msg in context.get('recent_messages', []) if msg['role'] == 'user']
+        session_duration = context.get('session_duration', 0)
+    
+    # Enhanced keyword detection with more variations
+    def contains_keywords(text, keywords):
+        return any(keyword in text for keyword in keywords)
+    
+    # Adjust response style based on politeness level
+    def format_response(base_response, politeness_level):
+        if politeness_level == 'casual':
+            return base_response.replace('です。', 'だよ。').replace('ます。', 'るよ。').replace('ございます', 'あります')
+        elif politeness_level == 'formal':
+            return base_response.replace('だよ', 'です').replace('るよ', 'ます')
+        return base_response
+    
+    # Enhanced keyword detection for more specific responses
+    
+    # Battery related questions with varied responses
+    if contains_keywords(user_message_lower, ["バッテリー", "battery", "電池", "充電"]):
+        import random
+        battery_responses = [
+            "🔋 申し訳ございませんが、現在バッテリー情報の取得機能は実装されていません。\n\nデスクトップMacの場合、バッテリー情報は利用できません。MacBookをお使いの場合は、システム環境設定 > バッテリーで確認できます。",
+            "🔋 バッテリー情報の取得機能は現在開発中です。\n\nMacBookをお使いの場合は、メニューバーのバッテリーアイコンをクリックするか、システム環境設定 > バッテリーで詳細を確認できます。",
+            "🔋 現在、バッテリー監視機能は実装されていません。\n\n充電状況を確認するには：\n• メニューバーのバッテリーアイコン\n• システム環境設定 > バッテリー\n• アクティビティモニタ > エネルギー"
+        ]
+        return random.choice(battery_responses)
+    
+    # Running apps/processes
+    elif contains_keywords(user_message_lower, ["アプリ", "app", "プロセス", "process", "実行中", "起動中", "動いている"]):
+        response_text = "📱 **現在実行中の主要なプロセス:**\n\n"
+        if top_processes:
+            for i, proc in enumerate(top_processes, 1):
+                cpu_val = proc.get('cpu_percent', 0) or 0
+                mem_val = proc.get('memory_percent', 0) or 0
+                response_text += f"**{i}. {proc['name']}**\n"
+                response_text += f"   🖥️ CPU: {cpu_val:.1f}% | 💾 メモリ: {mem_val:.1f}%\n\n"
+        else:
+            response_text += "プロセス情報を取得できませんでした。\n\n"
+        
+        response_text += f"📊 **システム全体の使用状況:**\n"
+        response_text += f"🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+        return response_text
+    
+    # Wi-Fi related questions with varied responses
+    elif contains_keywords(user_message_lower, ["wifi", "wi-fi", "ワイファイ", "無線", "ネット", "インターネット", "接続"]):
+        import random
+        wifi_responses = [
+            f"📶 申し訳ございませんが、現在Wi-Fi情報の取得機能は実装されていません。\n\nネットワーク接続状況は、システム環境設定 > ネットワークで確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+            f"📶 Wi-Fi詳細情報の取得機能は開発予定です。\n\n接続状況を確認するには：\n• システム環境設定 > ネットワーク\n• メニューバーのWi-Fiアイコン\n• ネットワークユーティリティ\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+            f"📶 現在、ネットワーク詳細監視機能は実装されていません。\n\nWi-Fi情報を確認するには、システム環境設定のネットワークセクションをご利用ください。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+        ]
+        return random.choice(wifi_responses)
+    
+    # CPU related questions
+    elif contains_keywords(user_message_lower, ["cpu", "プロセッサ", "使用率", "処理"]):
+        response_text = f"🖥️ **現在のCPU使用率は {cpu_usage}% です。**\n\n"
+        if cpu_usage > 80:
+            response_text += "⚠️ CPU使用率が高めです。重い処理が実行されている可能性があります。"
+        elif cpu_usage > 50:
+            response_text += "📊 CPU使用率は中程度です。通常の動作範囲内です。"
+        else:
+            response_text += "✅ CPU使用率は低く、システムに余裕があります。"
+        
+        if top_processes:
+            response_text += f"\n\n**上位プロセス:**\n"
+            for i, proc in enumerate(top_processes, 1):
+                cpu_val = proc.get('cpu_percent', 0) or 0
+                response_text += f"**{i}.** {proc['name']}: {cpu_val:.1f}%\n"
+        
+        return response_text
+    
+    elif contains_keywords(user_message_lower, ["メモリ", "memory", "ram", "使用量"]):
+        response_text = f"💾 **現在のメモリ使用状況:**\n\n"
+        response_text += f"📊 使用率: **{memory_percent}%**\n"
+        response_text += f"📈 使用量: **{memory_used_gb:.1f}GB** / {memory_total_gb:.1f}GB\n"
+        response_text += f"💿 空き容量: **{(memory_total_gb - memory_used_gb):.1f}GB**\n\n"
+        
+        if memory_percent > 85:
+            response_text += "🔴 メモリ使用率が高いです。アプリケーションを閉じることを検討してください。"
+        elif memory_percent > 70:
+            response_text += "🟡 メモリ使用率がやや高めです。"
+        else:
+            response_text += "🟢 メモリ使用率は正常範囲内です。"
+        
+        return response_text
+    
+    elif contains_keywords(user_message_lower, ["ディスク", "disk", "storage", "容量"]):
+        response_text = f"💿 **現在のディスク使用状況:**\n\n"
+        response_text += f"📊 使用率: **{disk_percent}%**\n"
+        response_text += f"📈 使用量: **{disk_used_gb:.0f}GB** / {disk_total_gb:.0f}GB\n"
+        response_text += f"💿 空き容量: **{(disk_total_gb - disk_used_gb):.0f}GB**\n\n"
+        
+        if disk_percent > 90:
+            response_text += "🔴 ディスク容量が不足しています。ファイルの整理が必要です。"
+        elif disk_percent > 80:
+            response_text += "🟡 ディスク使用率が高めです。不要なファイルの削除を検討してください。"
+        else:
+            response_text += "🟢 ディスク容量に余裕があります。"
+        
+        return response_text
+    
+    elif contains_keywords(user_message_lower, ["システム", "status", "全体", "状況"]):
+        response_text = f"📊 **システム全体の状況**\n\n"
+        response_text += f"🖥️ CPU: **{cpu_usage}%**\n"
+        response_text += f"💾 メモリ: **{memory_percent}%** ({memory_used_gb:.1f}GB/{memory_total_gb:.1f}GB)\n"
+        response_text += f"💿 ディスク: **{disk_percent}%** ({disk_used_gb:.0f}GB/{disk_total_gb:.0f}GB)\n\n"
+        
+        # Overall health assessment
+        issues = []
+        if cpu_usage > 80:
+            issues.append("CPU使用率が高い")
+        if memory_percent > 85:
+            issues.append("メモリ不足")
+        if disk_percent > 90:
+            issues.append("ディスク容量不足")
+        
+        if issues:
+            response_text += f"⚠️ **注意事項:** {', '.join(issues)}"
+        else:
+            response_text += "✅ **システムは正常に動作しています**"
+        
+        return response_text
+    
+    elif contains_keywords(user_message_lower, ["こんにちは", "hello", "はじめまして", "おはよう", "こんばんは"]):
+        response_text = f"👋 こんにちは！Mac Status PWAへようこそ！\n\n"
+        response_text += f"現在のシステム状況:\n"
+        response_text += f"🖥️ CPU: {cpu_usage}%\n"
+        response_text += f"💾 メモリ: {memory_percent}%\n"
+        response_text += f"💿 ディスク: {disk_percent}%\n\n"
+        response_text += f"何かご質問があれば、お気軽にお聞きください！"
+        
+        return response_text
+    
+    else:
+        # Generate contextual responses based on question patterns
+        import random
+        
+        # Check if it's a question about specific functionality not yet implemented
+        if any(word in user_message_lower for word in ["温度", "temperature", "熱", "ファン", "fan"]):
+            import random
+            temp_responses = [
+                f"🌡️ 申し訳ございませんが、現在温度情報の取得機能は実装されていません。\n\nサードパーティアプリ（TG Pro、Macs Fan Control等）で温度監視が可能です。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌡️ 温度・ファン監視機能は今後の実装予定です。\n\n現在利用可能な温度監視方法：\n• TG Pro（App Store）\n• Macs Fan Control（無料）\n• iStat Menus（有料）\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌡️ システム温度の監視機能は開発中です。\n\n代替手段として、アクティビティモニタでCPU使用率から負荷状況を確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+            ]
+            return random.choice(temp_responses)
+        
+        elif any(word in user_message_lower for word in ["ネットワーク", "network", "通信", "速度", "帯域"]):
+            import random
+            network_responses = [
+                f"🌐 申し訳ございませんが、現在ネットワーク詳細情報の取得機能は実装されていません。\n\nネットワーク使用状況は、アクティビティモニタ > ネットワークタブで確認できます。\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%",
+                f"🌐 ネットワーク速度・使用量監視機能は開発予定です。\n\n現在の確認方法：\n• アクティビティモニタ > ネットワーク\n• システム環境設定 > ネットワーク\n• ネットワークユーティリティ\n\n現在のシステム状況:\n🖥️ CPU: {cpu_usage}% | 💾 メモリ: {memory_percent}%"
+            ]
+            return random.choice(network_responses)
+        
+        # Generate varied helpful responses
+        responses = [
+            f"🤖 ご質問ありがとうございます。現在のシステム状況をお知らせします：\n\n🖥️ CPU: {cpu_usage}%\n💾 メモリ: {memory_percent}%\n💿 ディスク: {disk_percent}%\n\n「CPUの詳細」「メモリの状況」「実行中のアプリ」などとお聞きください。",
+            f"📊 システム監視中です。現在の状態：\n\nCPU使用率: {cpu_usage}%\nメモリ使用率: {memory_percent}%\nディスク使用率: {disk_percent}%\n\n他に何かお聞きしたいことはありますか？",
+            f"🔍 システムをチェックしました。\n\n• CPU: {cpu_usage}% {'(正常)' if cpu_usage < 70 else '(高め)' if cpu_usage < 85 else '(注意)'}\n• メモリ: {memory_percent}% {'(正常)' if memory_percent < 75 else '(高め)' if memory_percent < 90 else '(注意)'}\n• ディスク: {disk_percent}% {'(正常)' if disk_percent < 80 else '(高め)' if disk_percent < 95 else '(注意)'}\n\n詳しい情報が必要でしたら、具体的にお聞きください。",
+            f"💻 Macの状態を確認しました。\n\nCPU: {cpu_usage}%、メモリ: {memory_percent}%、ディスク: {disk_percent}%\n\n「バッテリーは？」「Wi-Fiは？」「実行中のアプリは？」などとお聞きください。"
         ]
         
         return random.choice(responses)
@@ -357,7 +678,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 elif message_type == "chat_message":
                     # Enhanced chat response
-                    user_message = message.get("message", "")
+                    # Handle both direct message and nested data.message formats
+                    user_message = ""
+                    if "data" in message and isinstance(message["data"], dict):
+                        user_message = message["data"].get("message", "")
+                    else:
+                        user_message = message.get("message", "")
+                    
+                    print(f"🔍 Processing chat message: '{user_message}'")
                     system_info = get_system_info()
                     
                     response_text = None
@@ -394,7 +722,8 @@ async def websocket_endpoint(websocket: WebSocket):
                     # If ELYZA model failed or not available, use fallback responses
                     if not response_text:
                         response_text = generate_fallback_response(user_message, system_info)
-                        print(f"✅ Fallback response generated: {len(response_text)} chars")
+                        print(f"✅ Fallback response generated for '{user_message}': {len(response_text)} chars")
+                        print(f"📝 Response preview: {response_text[:50]}...")
                     
                     response = {
                         "type": "chat_response",
