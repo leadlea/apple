@@ -291,6 +291,128 @@ class UserPreferences:
 - CSP (Content Security Policy) 設定
 - Service Worker適切な実装
 
+## 自動スケジュール管理システム
+
+### macOS launchd統合
+
+PWAサーバーの自動起動・停止を管理するため、macOSのlaunchdシステムを活用します。
+
+#### plist設定ファイル構造
+
+**起動用plist (com.macstatus.pwa.plist)**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macstatus.pwa</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/[username]/apple/working_server.py</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/[username]/apple</string>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+</dict>
+</plist>
+```
+
+**停止用plist (com.macstatus.pwa.stop.plist)**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.macstatus.pwa.stop</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>pkill -f "python3.*working_server.py"</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>18</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+</dict>
+</plist>
+```
+
+#### スケジュール管理コンポーネント
+
+```python
+class ScheduleManager:
+    def __init__(self):
+        self.plist_dir = os.path.expanduser("~/Library/LaunchAgents")
+        self.log_dir = "logs"
+        
+    def setup_schedule(self, start_hour: int = 9, stop_hour: int = 18):
+        """自動スケジュールを設定"""
+        self.create_plist_files(start_hour, stop_hour)
+        self.register_launch_agents()
+        
+    def remove_schedule(self):
+        """自動スケジュールを削除"""
+        self.unregister_launch_agents()
+        self.remove_plist_files()
+        
+    def get_schedule_status(self) -> dict:
+        """現在のスケジュール状態を取得"""
+        return {
+            'is_scheduled': self.is_schedule_active(),
+            'next_start': self.get_next_start_time(),
+            'next_stop': self.get_next_stop_time()
+        }
+```
+
+#### セットアップスクリプト
+
+```bash
+#!/bin/bash
+# setup_schedule.sh
+
+echo "🚀 Mac Status PWA 自動スケジュール設定を開始します..."
+
+# ログディレクトリ作成
+mkdir -p logs
+
+# LaunchAgents ディレクトリ確認・作成
+LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
+mkdir -p "$LAUNCH_AGENTS_DIR"
+
+# plistファイルをLaunchAgentsにコピー
+cp com.macstatus.pwa.plist "$LAUNCH_AGENTS_DIR/"
+cp com.macstatus.pwa.stop.plist "$LAUNCH_AGENTS_DIR/"
+
+# 既存のジョブを停止・削除
+launchctl unload "$LAUNCH_AGENTS_DIR/com.macstatus.pwa.plist" 2>/dev/null || true
+launchctl unload "$LAUNCH_AGENTS_DIR/com.macstatus.pwa.stop.plist" 2>/dev/null || true
+
+# 新しいジョブを登録
+launchctl load "$LAUNCH_AGENTS_DIR/com.macstatus.pwa.plist"
+launchctl load "$LAUNCH_AGENTS_DIR/com.macstatus.pwa.stop.plist"
+
+echo "✅ 設定完了！"
+echo "📅 スケジュール: 09:00 起動 / 18:00 停止"
+```
+
 ## デプロイメント戦略
 
 ### 1. 開発環境
@@ -310,8 +432,10 @@ python main.py
 - GitHub Actionsでの自動テスト
 - Docker containerization (optional)
 - 簡単なセットアップスクリプト提供
+- 自動スケジュール管理機能
 
 ### 3. 配布
 - GitHub Releases
 - 詳細なREADME
 - トラブルシューティングガイド
+- スケジュール設定ガイド

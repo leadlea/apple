@@ -1,19 +1,19 @@
-# Troubleshooting Guide - Mac Status PWA
+# Mac Status PWA トラブルシューティングガイド 🔧
 
-This guide helps you diagnose and resolve common issues with the Mac Status PWA application.
+Mac Status PWAアプリケーションの一般的な問題の診断と解決方法を説明します。
 
-## 🚨 Quick Diagnostics
+## 🚨 クイック診断
 
-### Health Check Script
+### 包括的ヘルスチェック
 
-Run this comprehensive health check to identify issues:
+問題を特定するために、この包括的なヘルスチェックを実行してください：
 
 ```bash
-# Run the deployment validation
-python validate_deployment.py
+# デプロイメント検証の実行
+python3 validate_deployment.py
 
-# Check system status
-python -c "
+# システム状態確認
+python3 -c "
 import sys, psutil, os
 print(f'Python: {sys.version}')
 print(f'Memory: {psutil.virtual_memory().available/1024**3:.1f}GB available')
@@ -22,127 +22,165 @@ print(f'CPU: {psutil.cpu_count()} cores')
 print(f'Platform: {sys.platform}')
 "
 
-# Test model loading
-python -c "
+# モデル読み込みテスト
+python3 -c "
 try:
     from backend.elyza_model import ELYZAModelInterface
     print('✓ Model interface import successful')
 except Exception as e:
     print(f'✗ Model interface error: {e}')
 "
+
+# 各機能のテスト実行
+python3 test_battery_functionality.py
+python3 test_wifi_functionality.py
+python3 test_running_apps_functionality.py
+python3 test_disk_details_functionality.py
+python3 test_dev_tools_functionality.py
+python3 test_thermal_functionality.py
 ```
 
-## 🔧 Installation Issues
+## 🔧 インストール問題
 
-### Issue: Python Version Incompatibility
+### 問題: Pythonバージョン非互換
 
-**Symptoms**:
+**症状**:
 ```
 ERROR: This package requires Python >=3.12
 ```
 
-**Solutions**:
-1. **Check Python version**:
+**解決方法**:
+1. **Pythonバージョン確認**:
    ```bash
    python3 --version
    ```
 
-2. **Install Python 3.12**:
+2. **Python 3.12のインストール**:
    ```bash
    # macOS with Homebrew
    brew install python@3.12
    
-   # Update PATH
+   # PATHの更新
    export PATH="/opt/homebrew/bin:$PATH"
+   
+   # または公式サイトからダウンロード
+   # https://www.python.org/downloads/
    ```
 
-3. **Create virtual environment with correct Python**:
+3. **正しいPythonで仮想環境作成**:
    ```bash
    python3.12 -m venv venv
    source venv/bin/activate
+   pip install --upgrade pip
    ```
 
-### Issue: Virtual Environment Problems
+### 問題: 仮想環境の問題
 
-**Symptoms**:
+**症状**:
 ```
 ModuleNotFoundError: No module named 'fastapi'
 ```
 
-**Solutions**:
-1. **Ensure virtual environment is activated**:
+**解決方法**:
+1. **仮想環境がアクティブか確認**:
    ```bash
    source venv/bin/activate
-   # You should see (venv) in your prompt
+   # プロンプトに (venv) が表示されることを確認
    ```
 
-2. **Recreate virtual environment**:
+2. **仮想環境の再作成**:
    ```bash
    rm -rf venv
    python3 -m venv venv
    source venv/bin/activate
+   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-3. **Check virtual environment**:
+3. **仮想環境の確認**:
    ```bash
    which python
-   # Should show path to venv/bin/python
+   # venv/bin/python のパスが表示されることを確認
+   
+   # インストール済みパッケージ確認
+   pip list | grep -E "fastapi|uvicorn|psutil|llama-cpp-python"
    ```
 
-### Issue: Dependency Installation Failures
+### 問題: 依存関係インストール失敗
 
-**Symptoms**:
+**症状**:
 ```
 ERROR: Failed building wheel for llama-cpp-python
 ```
 
-**Solutions**:
-1. **Install build dependencies**:
+**解決方法**:
+1. **ビルド依存関係のインストール**:
    ```bash
    # macOS
    xcode-select --install
    brew install cmake
    
-   # Linux
-   sudo apt-get install build-essential cmake
+   # M1/M2 Macの場合、Metal対応を有効化
+   export CMAKE_ARGS="-DLLAMA_METAL=on"
    ```
 
-2. **Force reinstall problematic packages**:
+2. **問題のあるパッケージの強制再インストール**:
    ```bash
    pip uninstall llama-cpp-python
    CMAKE_ARGS="-DLLAMA_METAL=on" pip install llama-cpp-python --force-reinstall --no-cache-dir
+   
+   # または、特定バージョンを指定
+   pip install llama-cpp-python==0.2.11 --force-reinstall
    ```
 
-3. **Use pre-compiled wheels**:
+3. **プリコンパイル済みホイールの使用**:
    ```bash
    pip install llama-cpp-python --prefer-binary
+   
+   # 依存関係の個別インストール
+   pip install fastapi uvicorn psutil websockets
    ```
 
-## 🤖 Model Issues
+4. **Apple Silicon Mac特有の問題**:
+   ```bash
+   # Rosetta経由でのインストール（最後の手段）
+   arch -x86_64 pip install llama-cpp-python
+   ```
 
-### Issue: Model File Not Found
+## 🤖 AIモデル問題
 
-**Symptoms**:
+### 問題: モデルファイルが見つからない
+
+**症状**:
 ```
 FileNotFoundError: Model file not found: models/elyza7b/ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf
 ```
 
-**Solutions**:
-1. **Download the model**:
-   - Visit: https://huggingface.co/elyza/ELYZA-japanese-Llama-2-7b-instruct-gguf
-   - Download: `ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf`
-
-2. **Place in correct directory**:
+**解決方法**:
+1. **モデルのダウンロード**:
    ```bash
-   mkdir -p models/elyza7b
-   # Move downloaded file to models/elyza7b/
+   # Hugging Faceから直接ダウンロード
+   wget -O models/elyza7b/ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf \
+     "https://huggingface.co/elyza/ELYZA-japanese-Llama-2-7b-instruct-gguf/resolve/main/ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf"
+   
+   # または、ブラウザで以下にアクセス:
+   # https://huggingface.co/elyza/ELYZA-japanese-Llama-2-7b-instruct-gguf
    ```
 
-3. **Verify file placement**:
+2. **正しいディレクトリに配置**:
+   ```bash
+   mkdir -p models/elyza7b
+   # ダウンロードしたファイルを models/elyza7b/ に移動
+   mv ~/Downloads/ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf models/elyza7b/
+   ```
+
+3. **ファイル配置の確認**:
    ```bash
    ls -la models/elyza7b/
-   # Should show the .gguf file
+   # .gguf ファイルが表示されることを確認
+   
+   # ファイルサイズ確認（約4GB）
+   du -h models/elyza7b/ELYZA-japanese-Llama-2-7b-instruct.Q4_0.gguf
    ```
 
 ### Issue: Model Loading Memory Error

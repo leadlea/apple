@@ -44,6 +44,80 @@ class NetworkStats:
 
 
 @dataclass
+class BatteryInfo:
+    """Battery information data structure"""
+    percent: Optional[float]
+    power_plugged: Optional[bool]
+    secsleft: Optional[int]  # Seconds left, None if unknown or plugged in
+    status: str  # "charging", "discharging", "full", "unknown"
+
+
+@dataclass
+class WiFiInfo:
+    """WiFi connection information data structure"""
+    ssid: Optional[str]
+    signal_strength: Optional[int]  # dBm value
+    signal_quality: str  # "excellent", "good", "fair", "poor", "no_signal"
+    channel: Optional[int]
+    frequency: Optional[float]  # GHz
+    security: Optional[str]
+    link_speed: Optional[int]  # Mbps
+    is_connected: bool
+    interface_name: Optional[str]
+
+
+@dataclass
+class RunningAppInfo:
+    """Running application information data structure"""
+    name: str
+    pid: int
+    cpu_percent: float
+    memory_percent: float
+    memory_mb: float
+    status: str  # "active", "background", "suspended"
+    window_count: int
+    is_gui_app: bool
+    bundle_id: Optional[str]
+    launch_time: Optional[float]
+
+
+@dataclass
+class DiskInfo:
+    """Disk partition information data structure"""
+    device: str
+    mountpoint: str
+    fstype: str
+    total_gb: float
+    used_gb: float
+    free_gb: float
+    percent: float
+    is_removable: bool
+    is_system: bool
+    label: Optional[str]
+
+
+@dataclass
+class DevToolInfo:
+    """Development tool information data structure"""
+    name: str
+    version: Optional[str]
+    path: Optional[str]
+    is_installed: bool
+    is_running: bool
+    additional_info: Optional[Dict[str, Any]]
+
+
+@dataclass
+class ThermalInfo:
+    """Thermal and fan information data structure"""
+    cpu_temperature: Optional[float]  # Celsius
+    gpu_temperature: Optional[float]  # Celsius
+    fan_speeds: List[Dict[str, Any]]  # List of fan info
+    thermal_state: str  # "normal", "warm", "hot", "critical", "unknown"
+    power_metrics: Optional[Dict[str, Any]]  # Power consumption data
+
+
+@dataclass
 class SystemStatus:
     """Complete system status data structure"""
     timestamp: datetime
@@ -61,6 +135,12 @@ class SystemStatus:
     temperature: Optional[float]
     uptime: float
     load_average: List[float]
+    battery: Optional[BatteryInfo]
+    wifi: Optional[WiFiInfo]
+    running_apps: List[RunningAppInfo]
+    disk_details: List[DiskInfo]
+    dev_tools: List[DevToolInfo]
+    thermal_info: Optional[ThermalInfo]
 
 
 class SystemMonitor:
@@ -127,6 +207,24 @@ class SystemMonitor:
             # Temperature (if available)
             temperature = await self._get_temperature()
             
+            # Battery information (if available)
+            battery = await self._get_battery_info()
+            
+            # WiFi information (if available)
+            wifi = await self._get_wifi_info()
+            
+            # Running applications information
+            running_apps = await self._get_running_apps()
+            
+            # Disk details information
+            disk_details = await self._get_disk_details()
+            
+            # Development tools information
+            dev_tools = await self._get_dev_tools_info()
+            
+            # Thermal information
+            thermal_info = await self._get_thermal_info()
+            
             return SystemStatus(
                 timestamp=datetime.now(),
                 cpu_percent=cpu_percent,
@@ -142,7 +240,13 @@ class SystemMonitor:
                 network_io=network_io,
                 temperature=temperature,
                 uptime=uptime,
-                load_average=load_avg
+                load_average=load_avg,
+                battery=battery,
+                wifi=wifi,
+                running_apps=running_apps,
+                disk_details=disk_details,
+                dev_tools=dev_tools,
+                thermal_info=thermal_info
             )
         
         async def fallback_system_info():
@@ -164,7 +268,13 @@ class SystemMonitor:
                 network_io=NetworkStats(0, 0, 0, 0),
                 temperature=None,
                 uptime=0.0,
-                load_average=[0.0, 0.0, 0.0]
+                load_average=[0.0, 0.0, 0.0],
+                battery=None,
+                wifi=None,
+                running_apps=[],
+                disk_details=[],
+                dev_tools=[],
+                thermal_info=None
             )
         
         try:
@@ -698,6 +808,854 @@ class SystemMonitor:
             
         except Exception:
             return None
+    
+    async def _get_battery_info(self) -> Optional[BatteryInfo]:
+        """
+        Get battery information using psutil
+        
+        Returns:
+            BatteryInfo object or None if no battery present
+        """
+        try:
+            battery = psutil.sensors_battery()
+            if battery is None:
+                # No battery present (desktop Mac)
+                return None
+            
+            # Determine battery status
+            if battery.power_plugged:
+                if battery.percent >= 100:
+                    status = "full"
+                else:
+                    status = "charging"
+            else:
+                status = "discharging"
+            
+            return BatteryInfo(
+                percent=battery.percent,
+                power_plugged=battery.power_plugged,
+                secsleft=battery.secsleft if battery.secsleft != psutil.POWER_TIME_UNLIMITED else None,
+                status=status
+            )
+            
+        except Exception as e:
+            print(f"Warning: Could not get battery information: {e}")
+            return None
+    
+    async def _get_wifi_info(self) -> Optional[WiFiInfo]:
+        """
+        Get WiFi connection information using macOS-specific commands
+        
+        Returns:
+            WiFiInfo object or None if WiFi not available or not connected
+        """
+        if not self.is_macos:
+            return None
+            
+        try:
+            # Get WiFi interface name first
+            interface_result = subprocess.run([
+                'networksetup', '-listallhardwareports'
+            ], capture_output=True, text=True, timeout=10)
+            
+            wifi_interface = None
+            if interface_result.returncode == 0:
+                lines = interface_result.stdout.split('\n')
+                for i, line in enumerate(lines):
+                    if 'Wi-Fi' in line and i + 1 < len(lines):
+                        device_line = lines[i + 1]
+                        if 'Device:' in device_line:
+                            wifi_interface = device_line.split('Device:')[1].strip()
+                            break
+            
+            if not wifi_interface:
+                # Fallback to common interface names
+                wifi_interface = 'en0'
+            
+            # Get detailed WiFi information using airport command
+            airport_result = subprocess.run([
+                '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport',
+                '-I'
+            ], capture_output=True, text=True, timeout=10)
+            
+            if airport_result.returncode != 0:
+                return WiFiInfo(
+                    ssid=None,
+                    signal_strength=None,
+                    signal_quality="no_signal",
+                    channel=None,
+                    frequency=None,
+                    security=None,
+                    link_speed=None,
+                    is_connected=False,
+                    interface_name=wifi_interface
+                )
+            
+            # Parse airport output
+            wifi_data = {}
+            for line in airport_result.stdout.split('\n'):
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    wifi_data[key.strip()] = value.strip()
+            
+            # Extract information
+            ssid = wifi_data.get('SSID')
+            signal_strength = None
+            channel = None
+            frequency = None
+            security = wifi_data.get('link auth')
+            
+            # Parse signal strength (RSSI)
+            if 'agrCtlRSSI' in wifi_data:
+                try:
+                    signal_strength = int(wifi_data['agrCtlRSSI'])
+                except ValueError:
+                    pass
+            
+            # Parse channel
+            if 'channel' in wifi_data:
+                try:
+                    channel_info = wifi_data['channel']
+                    # Extract channel number (format like "6 (2.4 GHz)")
+                    if '(' in channel_info:
+                        channel = int(channel_info.split('(')[0].strip())
+                        freq_part = channel_info.split('(')[1].split(')')[0]
+                        if 'GHz' in freq_part:
+                            frequency = float(freq_part.replace('GHz', '').strip())
+                    else:
+                        channel = int(channel_info)
+                except (ValueError, IndexError):
+                    pass
+            
+            # Get link speed using ifconfig
+            link_speed = None
+            try:
+                ifconfig_result = subprocess.run([
+                    'ifconfig', wifi_interface
+                ], capture_output=True, text=True, timeout=5)
+                
+                if ifconfig_result.returncode == 0:
+                    for line in ifconfig_result.stdout.split('\n'):
+                        if 'media:' in line and 'Mbps' in line:
+                            # Extract speed from line like "media: autoselect (1000baseT <full-duplex>)"
+                            import re
+                            speed_match = re.search(r'(\d+)(?:base|Mbps)', line)
+                            if speed_match:
+                                link_speed = int(speed_match.group(1))
+                            break
+            except Exception:
+                pass
+            
+            # Determine signal quality
+            signal_quality = "unknown"
+            if signal_strength is not None:
+                if signal_strength >= -30:
+                    signal_quality = "excellent"
+                elif signal_strength >= -50:
+                    signal_quality = "good"
+                elif signal_strength >= -70:
+                    signal_quality = "fair"
+                elif signal_strength >= -90:
+                    signal_quality = "poor"
+                else:
+                    signal_quality = "very_poor"
+            
+            is_connected = ssid is not None and ssid != ""
+            
+            return WiFiInfo(
+                ssid=ssid,
+                signal_strength=signal_strength,
+                signal_quality=signal_quality,
+                channel=channel,
+                frequency=frequency,
+                security=security,
+                link_speed=link_speed,
+                is_connected=is_connected,
+                interface_name=wifi_interface
+            )
+            
+        except Exception as e:
+            print(f"Warning: Could not get WiFi information: {e}")
+            return WiFiInfo(
+                ssid=None,
+                signal_strength=None,
+                signal_quality="unknown",
+                channel=None,
+                frequency=None,
+                security=None,
+                link_speed=None,
+                is_connected=False,
+                interface_name=None
+            )
+    
+    async def _get_running_apps(self) -> List[RunningAppInfo]:
+        """
+        Get running GUI applications using macOS-specific commands
+        
+        Returns:
+            List of RunningAppInfo objects
+        """
+        running_apps = []
+        
+        if not self.is_macos:
+            return running_apps
+            
+        try:
+            # Get GUI applications using AppleScript
+            applescript_cmd = '''
+            tell application "System Events"
+                set appList to {}
+                repeat with proc in (every process whose background only is false)
+                    try
+                        set appName to name of proc
+                        set appPID to unix id of proc
+                        set windowCount to count of windows of proc
+                        set end of appList to {appName, appPID, windowCount}
+                    end try
+                end repeat
+                return appList
+            end tell
+            '''
+            
+            result = subprocess.run([
+                'osascript', '-e', applescript_cmd
+            ], capture_output=True, text=True, timeout=15)
+            
+            if result.returncode != 0:
+                print(f"AppleScript failed: {result.stderr}")
+                return running_apps
+            
+            # Parse AppleScript output
+            gui_apps = {}
+            if result.stdout.strip():
+                # Parse the AppleScript list format
+                output = result.stdout.strip()
+                # Remove outer braces and split by app entries
+                if output.startswith('{') and output.endswith('}'):
+                    output = output[1:-1]
+                    
+                    # Split by app entries (each app is {name, pid, windowCount})
+                    import re
+                    app_matches = re.findall(r'\{([^}]+)\}', output)
+                    
+                    for match in app_matches:
+                        parts = [part.strip().strip('"') for part in match.split(',')]
+                        if len(parts) >= 3:
+                            try:
+                                app_name = parts[0]
+                                app_pid = int(parts[1])
+                                window_count = int(parts[2])
+                                gui_apps[app_pid] = {
+                                    'name': app_name,
+                                    'window_count': window_count
+                                }
+                            except (ValueError, IndexError):
+                                continue
+            
+            # Get detailed process information using psutil
+            for proc in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_percent', 
+                                           'memory_info', 'status', 'create_time']):
+                try:
+                    pinfo = proc.info
+                    pid = pinfo['pid']
+                    
+                    # Check if this is a GUI app
+                    if pid in gui_apps:
+                        gui_info = gui_apps[pid]
+                        
+                        # Get memory in MB
+                        memory_mb = 0
+                        if pinfo['memory_info']:
+                            memory_mb = pinfo['memory_info'].rss / (1024 * 1024)
+                        
+                        # Determine app status
+                        status = "background"
+                        if gui_info['window_count'] > 0:
+                            status = "active"
+                        elif pinfo['status'] == psutil.STATUS_STOPPED:
+                            status = "suspended"
+                        
+                        # Try to get bundle ID (macOS specific)
+                        bundle_id = None
+                        try:
+                            # This is a simplified approach - in practice, you might need more complex logic
+                            bundle_id = f"com.app.{gui_info['name'].lower().replace(' ', '')}"
+                        except:
+                            pass
+                        
+                        app_info = RunningAppInfo(
+                            name=gui_info['name'],
+                            pid=pid,
+                            cpu_percent=pinfo['cpu_percent'] or 0.0,
+                            memory_percent=pinfo['memory_percent'] or 0.0,
+                            memory_mb=memory_mb,
+                            status=status,
+                            window_count=gui_info['window_count'],
+                            is_gui_app=True,
+                            bundle_id=bundle_id,
+                            launch_time=pinfo['create_time']
+                        )
+                        
+                        running_apps.append(app_info)
+                        
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    continue
+                except Exception as e:
+                    print(f"Error processing app {pinfo.get('name', 'Unknown')}: {e}")
+                    continue
+            
+            # Sort by CPU usage (descending)
+            running_apps.sort(key=lambda x: x.cpu_percent, reverse=True)
+            
+            return running_apps
+            
+        except Exception as e:
+            print(f"Warning: Could not get running apps information: {e}")
+            return running_apps
+    
+    async def _get_disk_details(self) -> List[DiskInfo]:
+        """
+        Get detailed disk information for all partitions
+        
+        Returns:
+            List of DiskInfo objects
+        """
+        disk_details = []
+        
+        try:
+            # Get all disk partitions
+            partitions = psutil.disk_partitions()
+            
+            for partition in partitions:
+                try:
+                    # Get usage statistics
+                    usage = psutil.disk_usage(partition.mountpoint)
+                    
+                    # Convert bytes to GB
+                    total_gb = usage.total / (1024**3)
+                    used_gb = usage.used / (1024**3)
+                    free_gb = usage.free / (1024**3)
+                    percent = (usage.used / usage.total) * 100 if usage.total > 0 else 0
+                    
+                    # Determine if removable (basic heuristic)
+                    is_removable = (
+                        '/Volumes/' in partition.mountpoint and 
+                        partition.mountpoint != '/' and
+                        'disk' in partition.device.lower()
+                    )
+                    
+                    # Determine if system disk
+                    is_system = partition.mountpoint == '/' or partition.mountpoint.startswith('/System')
+                    
+                    # Get disk label (macOS specific)
+                    label = None
+                    if self.is_macos:
+                        try:
+                            if partition.mountpoint.startswith('/Volumes/'):
+                                label = partition.mountpoint.split('/Volumes/')[-1]
+                            elif partition.mountpoint == '/':
+                                label = 'Macintosh HD'
+                            else:
+                                # Try to get volume name using diskutil
+                                result = subprocess.run([
+                                    'diskutil', 'info', partition.device
+                                ], capture_output=True, text=True, timeout=5)
+                                
+                                if result.returncode == 0:
+                                    for line in result.stdout.split('\n'):
+                                        if 'Volume Name:' in line:
+                                            label = line.split('Volume Name:')[1].strip()
+                                            break
+                        except Exception:
+                            pass
+                    
+                    # Skip very small partitions (< 100MB) or inaccessible ones
+                    if total_gb < 0.1:
+                        continue
+                    
+                    disk_info = DiskInfo(
+                        device=partition.device,
+                        mountpoint=partition.mountpoint,
+                        fstype=partition.fstype,
+                        total_gb=total_gb,
+                        used_gb=used_gb,
+                        free_gb=free_gb,
+                        percent=percent,
+                        is_removable=is_removable,
+                        is_system=is_system,
+                        label=label
+                    )
+                    
+                    disk_details.append(disk_info)
+                    
+                except (PermissionError, OSError) as e:
+                    # Skip inaccessible partitions
+                    print(f"Warning: Could not access partition {partition.mountpoint}: {e}")
+                    continue
+            
+            # Sort by system disks first, then by total size
+            disk_details.sort(key=lambda x: (not x.is_system, -x.total_gb))
+            
+            return disk_details
+            
+        except Exception as e:
+            print(f"Warning: Could not get disk details: {e}")
+            return disk_details
+    
+    async def _get_dev_tools_info(self) -> List[DevToolInfo]:
+        """
+        Get development tools information
+        
+        Returns:
+            List of DevToolInfo objects
+        """
+        dev_tools = []
+        
+        # Define tools to check
+        tools_to_check = [
+            {
+                'name': 'Xcode',
+                'command': ['xcode-select', '--print-path'],
+                'version_command': ['xcodebuild', '-version'],
+                'app_name': 'Xcode'
+            },
+            {
+                'name': 'Git',
+                'command': ['which', 'git'],
+                'version_command': ['git', '--version'],
+                'app_name': None
+            },
+            {
+                'name': 'Homebrew',
+                'command': ['which', 'brew'],
+                'version_command': ['brew', '--version'],
+                'app_name': None
+            },
+            {
+                'name': 'Node.js',
+                'command': ['which', 'node'],
+                'version_command': ['node', '--version'],
+                'app_name': None
+            },
+            {
+                'name': 'Python',
+                'command': ['which', 'python3'],
+                'version_command': ['python3', '--version'],
+                'app_name': None
+            },
+            {
+                'name': 'Docker',
+                'command': ['which', 'docker'],
+                'version_command': ['docker', '--version'],
+                'app_name': 'Docker Desktop'
+            },
+            {
+                'name': 'VS Code',
+                'command': ['which', 'code'],
+                'version_command': ['code', '--version'],
+                'app_name': 'Visual Studio Code'
+            }
+        ]
+        
+        for tool_config in tools_to_check:
+            try:
+                tool_info = await self._check_dev_tool(tool_config)
+                dev_tools.append(tool_info)
+            except Exception as e:
+                print(f"Warning: Could not check {tool_config['name']}: {e}")
+                # Add as not installed
+                dev_tools.append(DevToolInfo(
+                    name=tool_config['name'],
+                    version=None,
+                    path=None,
+                    is_installed=False,
+                    is_running=False,
+                    additional_info=None
+                ))
+        
+        return dev_tools
+    
+    async def _check_dev_tool(self, tool_config: Dict[str, Any]) -> DevToolInfo:
+        """
+        Check individual development tool
+        
+        Args:
+            tool_config: Tool configuration dictionary
+            
+        Returns:
+            DevToolInfo object
+        """
+        name = tool_config['name']
+        command = tool_config['command']
+        version_command = tool_config.get('version_command')
+        app_name = tool_config.get('app_name')
+        
+        # Check if tool is installed
+        try:
+            result = subprocess.run(
+                command, 
+                capture_output=True, 
+                text=True, 
+                timeout=5
+            )
+            
+            is_installed = result.returncode == 0
+            path = result.stdout.strip() if is_installed else None
+            
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            is_installed = False
+            path = None
+        
+        # Get version if installed
+        version = None
+        if is_installed and version_command:
+            try:
+                version_result = subprocess.run(
+                    version_command,
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if version_result.returncode == 0:
+                    version_output = version_result.stdout.strip()
+                    # Parse version from output
+                    version = self._parse_version(name, version_output)
+                    
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+        
+        # Check if tool is running (for GUI apps)
+        is_running = False
+        if app_name and hasattr(self, '_last_status') and self._last_status:
+            # Check if app is in running apps list
+            if hasattr(self._last_status, 'running_apps'):
+                for app in self._last_status.running_apps:
+                    if app_name.lower() in app.name.lower():
+                        is_running = True
+                        break
+        
+        # Get additional info for specific tools
+        additional_info = await self._get_tool_additional_info(name, is_installed, path)
+        
+        return DevToolInfo(
+            name=name,
+            version=version,
+            path=path,
+            is_installed=is_installed,
+            is_running=is_running,
+            additional_info=additional_info
+        )
+    
+    def _parse_version(self, tool_name: str, version_output: str) -> Optional[str]:
+        """Parse version from command output"""
+        try:
+            if tool_name == 'Git':
+                # "git version 2.39.3 (Apple Git-145)"
+                if 'git version' in version_output:
+                    return version_output.split('git version')[1].split()[0]
+            elif tool_name == 'Homebrew':
+                # "Homebrew 4.1.11"
+                lines = version_output.split('\n')
+                for line in lines:
+                    if 'Homebrew' in line:
+                        return line.split('Homebrew')[1].strip()
+            elif tool_name == 'Node.js':
+                # "v18.17.0"
+                return version_output.strip()
+            elif tool_name == 'Python':
+                # "Python 3.11.5"
+                if 'Python' in version_output:
+                    return version_output.split('Python')[1].strip()
+            elif tool_name == 'Docker':
+                # "Docker version 24.0.6, build ed223bc"
+                if 'Docker version' in version_output:
+                    return version_output.split('Docker version')[1].split(',')[0].strip()
+            elif tool_name == 'VS Code':
+                # Multi-line output, first line is version
+                return version_output.split('\n')[0].strip()
+            elif tool_name == 'Xcode':
+                # "Xcode 15.0\nBuild version 15A240d"
+                lines = version_output.split('\n')
+                for line in lines:
+                    if 'Xcode' in line:
+                        return line.split('Xcode')[1].strip()
+            
+            # Fallback: return first line
+            return version_output.split('\n')[0].strip()
+            
+        except Exception:
+            return version_output.strip() if version_output else None
+    
+    async def _get_tool_additional_info(self, tool_name: str, is_installed: bool, path: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Get additional information for specific tools"""
+        if not is_installed:
+            return None
+        
+        additional_info = {}
+        
+        try:
+            if tool_name == 'Git':
+                # Get git config info
+                try:
+                    user_result = subprocess.run(
+                        ['git', 'config', '--global', 'user.name'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if user_result.returncode == 0:
+                        additional_info['user_name'] = user_result.stdout.strip()
+                    
+                    email_result = subprocess.run(
+                        ['git', 'config', '--global', 'user.email'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if email_result.returncode == 0:
+                        additional_info['user_email'] = email_result.stdout.strip()
+                except Exception:
+                    pass
+            
+            elif tool_name == 'Homebrew':
+                # Get brew info
+                try:
+                    info_result = subprocess.run(
+                        ['brew', '--prefix'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if info_result.returncode == 0:
+                        additional_info['prefix'] = info_result.stdout.strip()
+                except Exception:
+                    pass
+            
+            elif tool_name == 'Node.js':
+                # Get npm version
+                try:
+                    npm_result = subprocess.run(
+                        ['npm', '--version'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if npm_result.returncode == 0:
+                        additional_info['npm_version'] = npm_result.stdout.strip()
+                except Exception:
+                    pass
+            
+            elif tool_name == 'Python':
+                # Get pip version
+                try:
+                    pip_result = subprocess.run(
+                        ['pip3', '--version'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if pip_result.returncode == 0:
+                        additional_info['pip_version'] = pip_result.stdout.strip().split()[1]
+                except Exception:
+                    pass
+            
+            elif tool_name == 'Docker':
+                # Get docker compose version
+                try:
+                    compose_result = subprocess.run(
+                        ['docker', 'compose', 'version'],
+                        capture_output=True, text=True, timeout=3
+                    )
+                    if compose_result.returncode == 0:
+                        additional_info['compose_version'] = compose_result.stdout.strip()
+                except Exception:
+                    pass
+        
+        except Exception:
+            pass
+        
+        return additional_info if additional_info else None
+    
+    async def _get_thermal_info(self) -> Optional[ThermalInfo]:
+        """
+        Get thermal and fan information (macOS specific)
+        
+        Returns:
+            ThermalInfo object or None if not available
+        """
+        if not self.is_macos:
+            return None
+        
+        cpu_temperature = None
+        gpu_temperature = None
+        fan_speeds = []
+        thermal_state = "unknown"
+        power_metrics = None
+        
+        try:
+            # Try to get temperature using powermetrics (requires sudo, likely to fail)
+            try:
+                powermetrics_result = subprocess.run([
+                    'sudo', 'powermetrics', '--samplers', 'smc', '-n', '1', '--show-initial-usage'
+                ], capture_output=True, text=True, timeout=10)
+                
+                if powermetrics_result.returncode == 0:
+                    output = powermetrics_result.stdout
+                    
+                    # Parse CPU temperature
+                    for line in output.split('\n'):
+                        if 'CPU die temperature' in line:
+                            try:
+                                temp_str = line.split(':')[1].strip().replace('C', '').strip()
+                                cpu_temperature = float(temp_str)
+                            except (ValueError, IndexError):
+                                pass
+                        elif 'GPU die temperature' in line:
+                            try:
+                                temp_str = line.split(':')[1].strip().replace('C', '').strip()
+                                gpu_temperature = float(temp_str)
+                            except (ValueError, IndexError):
+                                pass
+                        elif 'Fan' in line and 'rpm' in line:
+                            try:
+                                # Parse fan speed
+                                parts = line.split(':')
+                                if len(parts) >= 2:
+                                    fan_name = parts[0].strip()
+                                    rpm_str = parts[1].strip().replace('rpm', '').strip()
+                                    rpm = int(float(rpm_str))
+                                    fan_speeds.append({
+                                        'name': fan_name,
+                                        'rpm': rpm
+                                    })
+                            except (ValueError, IndexError):
+                                pass
+            except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
+                # powermetrics requires sudo, so this is expected to fail in most cases
+                pass
+            
+            # Alternative: Try to get temperature using system_profiler
+            if cpu_temperature is None:
+                try:
+                    system_profiler_result = subprocess.run([
+                        'system_profiler', 'SPHardwareDataType', '-json'
+                    ], capture_output=True, text=True, timeout=10)
+                    
+                    if system_profiler_result.returncode == 0:
+                        import json
+                        data = json.loads(system_profiler_result.stdout)
+                        # This doesn't typically include temperature, but we try anyway
+                        pass
+                except Exception:
+                    pass
+            
+            # Alternative: Try using istats (if installed via Homebrew)
+            if cpu_temperature is None:
+                try:
+                    istats_result = subprocess.run([
+                        'istats', 'cpu', 'temp'
+                    ], capture_output=True, text=True, timeout=5)
+                    
+                    if istats_result.returncode == 0:
+                        # Parse istats output: "CPU temp: 45.0°C"
+                        output = istats_result.stdout.strip()
+                        if '°C' in output:
+                            temp_str = output.split(':')[1].strip().replace('°C', '').strip()
+                            cpu_temperature = float(temp_str)
+                except (subprocess.TimeoutExpired, FileNotFoundError):
+                    pass
+            
+            # Try to get fan information using istats
+            if not fan_speeds:
+                try:
+                    istats_fan_result = subprocess.run([
+                        'istats', 'fan'
+                    ], capture_output=True, text=True, timeout=5)
+                    
+                    if istats_fan_result.returncode == 0:
+                        # Parse istats fan output
+                        for line in istats_fan_result.stdout.split('\n'):
+                            if 'Fan' in line and 'RPM' in line:
+                                try:
+                                    # Parse line like "Fan 0: 1200 RPM"
+                                    parts = line.split(':')
+                                    if len(parts) >= 2:
+                                        fan_name = parts[0].strip()
+                                        rpm_str = parts[1].strip().replace('RPM', '').strip()
+                                        rpm = int(float(rpm_str))
+                                        fan_speeds.append({
+                                            'name': fan_name,
+                                            'rpm': rpm
+                                        })
+                                except (ValueError, IndexError):
+                                    pass
+                except (subprocess.TimeoutExpired, FileNotFoundError):
+                    pass
+            
+            # Try to get thermal state using pmset
+            try:
+                pmset_result = subprocess.run([
+                    'pmset', '-g', 'therm'
+                ], capture_output=True, text=True, timeout=5)
+                
+                if pmset_result.returncode == 0:
+                    output = pmset_result.stdout.lower()
+                    if 'cpu_speed_limit' in output:
+                        # System is thermally throttling
+                        thermal_state = "hot"
+                    elif cpu_temperature:
+                        # Estimate thermal state based on temperature
+                        if cpu_temperature < 60:
+                            thermal_state = "normal"
+                        elif cpu_temperature < 75:
+                            thermal_state = "warm"
+                        elif cpu_temperature < 90:
+                            thermal_state = "hot"
+                        else:
+                            thermal_state = "critical"
+                    else:
+                        thermal_state = "normal"
+            except (subprocess.TimeoutExpired, FileNotFoundError):
+                pass
+            
+            # Try to get power metrics using powermetrics (basic info)
+            try:
+                power_result = subprocess.run([
+                    'pmset', '-g', 'ps'
+                ], capture_output=True, text=True, timeout=5)
+                
+                if power_result.returncode == 0:
+                    power_metrics = {
+                        'power_source': 'unknown'
+                    }
+                    
+                    output = power_result.stdout
+                    if 'AC Power' in output:
+                        power_metrics['power_source'] = 'AC'
+                    elif 'Battery Power' in output:
+                        power_metrics['power_source'] = 'Battery'
+            except Exception:
+                pass
+            
+            # If we have any thermal information, return it
+            if cpu_temperature is not None or gpu_temperature is not None or fan_speeds or thermal_state != "unknown":
+                return ThermalInfo(
+                    cpu_temperature=cpu_temperature,
+                    gpu_temperature=gpu_temperature,
+                    fan_speeds=fan_speeds,
+                    thermal_state=thermal_state,
+                    power_metrics=power_metrics
+                )
+            else:
+                # Return basic info even if we can't get detailed thermal data
+                return ThermalInfo(
+                    cpu_temperature=None,
+                    gpu_temperature=None,
+                    fan_speeds=[],
+                    thermal_state="normal",  # Assume normal if no thermal issues detected
+                    power_metrics=power_metrics
+                )
+                
+        except Exception as e:
+            print(f"Warning: Could not get thermal information: {e}")
+            return ThermalInfo(
+                cpu_temperature=None,
+                gpu_temperature=None,
+                fan_speeds=[],
+                thermal_state="unknown",
+                power_metrics=None
+            )
     
     def get_system_summary(self) -> Dict[str, Any]:
         """
