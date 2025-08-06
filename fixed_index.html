@@ -5,6 +5,195 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mac Status PWA - Fixed</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/assets/video-styles.css">
+    <style>
+        /* ヘッダーレイアウトの調整 */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0 0 20px 20px;
+            margin-bottom: 20px;
+        }
+        
+        .app-header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 768px) {
+            .app-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+        
+        /* 中央メイン動画のスタイル */
+        .welcome-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        
+        .main-video-container {
+            position: relative;
+        }
+        
+        .main-video {
+            width: 400px;
+            height: 300px;
+        }
+        
+        /* メイン動画専用のスタイル - 人物部分のみ表示 */
+        .main-video .video-container {
+            width: 400px;
+            height: 300px;
+            border-radius: 20px;
+            border: none; /* 紫の枠線を削除 */
+            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.15);
+            background: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .main-video .video-element {
+            width: 400px;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 人物部分以外を隠すオーバーレイ - より自然な表示 */
+        .main-video .video-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                /* 左側のオーバーレイ */
+                linear-gradient(
+                    to right,
+                    rgba(245, 245, 247, 0.98) 0%,
+                    rgba(245, 245, 247, 0.95) 20%,
+                    rgba(245, 245, 247, 0.7) 30%,
+                    transparent 40%
+                ),
+                /* 右側のオーバーレイ */
+                linear-gradient(
+                    to left,
+                    rgba(245, 245, 247, 0.98) 0%,
+                    rgba(245, 245, 247, 0.95) 20%,
+                    rgba(245, 245, 247, 0.7) 30%,
+                    transparent 40%
+                );
+            z-index: 2;
+            pointer-events: none;
+            border-radius: 20px;
+        }
+        
+        /* 上下の余白を少し隠す */
+        .main-video .video-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                /* 上部のオーバーレイ */
+                linear-gradient(
+                    to bottom,
+                    rgba(245, 245, 247, 0.4) 0%,
+                    rgba(245, 245, 247, 0.2) 10%,
+                    transparent 20%
+                ),
+                /* 下部のオーバーレイ */
+                linear-gradient(
+                    to top,
+                    rgba(245, 245, 247, 0.4) 0%,
+                    rgba(245, 245, 247, 0.2) 10%,
+                    transparent 20%
+                );
+            z-index: 3;
+            pointer-events: none;
+            border-radius: 20px;
+        }
+        
+        /* マスクセレクターを非表示 */
+        .main-video .mask-selector {
+            display: none;
+        }
+        
+
+        
+        /* レスポンシブ対応 - メイン動画 */
+        @media (max-width: 768px) {
+            .main-video {
+                width: 320px;
+                height: 240px;
+            }
+            
+            .main-video .video-container,
+            .main-video .video-element {
+                width: 320px;
+                height: 240px;
+            }
+            
+            /* タブレット用のオーバーレイ調整 */
+            .main-video .video-container::before {
+                background: linear-gradient(
+                    to right,
+                    rgba(245, 245, 247, 0.95) 0%,
+                    rgba(245, 245, 247, 0.95) 20%,
+                    transparent 30%,
+                    transparent 70%,
+                    rgba(245, 245, 247, 0.95) 80%,
+                    rgba(245, 245, 247, 0.95) 100%
+                );
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .main-video {
+                width: 280px;
+                height: 210px;
+            }
+            
+            .main-video .video-container,
+            .main-video .video-element {
+                width: 280px;
+                height: 210px;
+            }
+            
+            .welcome-message {
+                padding: 20px 10px;
+            }
+            
+            /* モバイル用のオーバーレイ調整 */
+            .main-video .video-container::before {
+                background: linear-gradient(
+                    to right,
+                    rgba(245, 245, 247, 0.95) 0%,
+                    rgba(245, 245, 247, 0.95) 15%,
+                    transparent 25%,
+                    transparent 75%,
+                    rgba(245, 245, 247, 0.95) 85%,
+                    rgba(245, 245, 247, 0.95) 100%
+                );
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -76,9 +265,12 @@
             <div class="messages-wrapper">
                 <div class="messages" id="messages">
                     <div class="welcome-message">
-                        <div class="welcome-icon">👋</div>
-                        <h2>Mac Status アシスタント</h2>
-                        <p>こんにちは！Macのステータスについて何でも聞いてください。</p>
+                        <!-- メイン動画エリア -->
+                        <div class="main-video-container">
+                            <div id="mainVideo" class="main-video"></div>
+                        </div>
+                        
+
                     </div>
                 </div>
             </div>
@@ -98,6 +290,7 @@
         </main>
     </div>
     
+    <script src="/static/assets/video-component.js"></script>
     <script>
         // Simple and direct implementation
         let websocket = null;
@@ -251,10 +444,106 @@
             }
         });
         
+        // Video component initialization
+        let mainVideoComponent = null;
+        
+        function initializeMainVideo() {
+            // メイン動画の初期化（中央エリア用・音声ON）
+            const videoSrc = '/static/assets/videos/apple.mp4';
+            
+            try {
+                mainVideoComponent = new VideoComponent('mainVideo', {
+                    videoSrc: videoSrc,
+                    maskType: 'none', // マスクなし
+                    size: 'custom', // カスタムサイズ（CSSで400x300px指定）
+                    autoplay: true,
+                    loop: true,
+                    muted: false, // 音声ON！
+                    controls: true, // コントロール表示
+                    showMaskSelector: false // マスクセレクターを非表示
+                });
+                
+                console.log('Main video initialized successfully with sound ON');
+            } catch (error) {
+                console.error('Failed to initialize main video:', error);
+                showMainVideoPlaceholder();
+            }
+        }
+        
+        function showMainVideoPlaceholder() {
+            const container = document.getElementById('mainVideo');
+            container.innerHTML = `
+                <div class="main-video-placeholder" style="
+                    width: 400px; 
+                    height: 300px; 
+                    border-radius: 20px;
+                    background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%);
+                    background-size: 20px 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #666;
+                    font-size: 16px;
+                    border: 4px solid rgba(103, 126, 234, 0.3);
+                ">
+                    🎬 動画を読み込み中...
+                </div>
+            `;
+        }
+        
+        // 動画ファイルの存在確認
+        function checkVideoExists(videoSrc) {
+            return fetch(videoSrc, { method: 'HEAD' })
+                .then(response => response.ok)
+                .catch(() => false);
+        }
+        
+        // 音声付き動画の再生を開始（ユーザーインタラクション後）
+        function enableMainVideoSound() {
+            if (mainVideoComponent && mainVideoComponent.video) {
+                mainVideoComponent.video.muted = false;
+                mainVideoComponent.video.play().then(() => {
+                    console.log('Main video playing with sound');
+                }).catch(error => {
+                    console.log('Autoplay with sound failed, user interaction required:', error);
+                });
+            }
+        }
+        
+        // ページクリック時に音声を有効化
+        function setupSoundActivation() {
+            const activateSound = () => {
+                enableMainVideoSound();
+                document.removeEventListener('click', activateSound);
+                document.removeEventListener('keydown', activateSound);
+                console.log('Sound activation listeners removed');
+            };
+            
+            document.addEventListener('click', activateSound);
+            document.addEventListener('keydown', activateSound);
+            console.log('Sound activation listeners added');
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, connecting WebSocket...');
             connectWebSocket();
+            
+            // 動画の初期化（少し遅延させて他の要素の読み込みを優先）
+            setTimeout(() => {
+                const videoSrc = '/static/assets/videos/apple.mp4';
+                checkVideoExists(videoSrc).then(exists => {
+                    if (exists) {
+                        // 中央のメイン動画のみを初期化（音声ON・マスクなし）
+                        initializeMainVideo();
+                        // 音声有効化のためのユーザーインタラクション待機
+                        setupSoundActivation();
+                    } else {
+                        console.log('Video not found, showing placeholder');
+                        showMainVideoPlaceholder();
+                    }
+                });
+            }, 1000);
         });
     </script>
 </body>

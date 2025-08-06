@@ -1,0 +1,241 @@
+/* 
+ * Video Display Styles for Mac Status PWA
+ * 動画表示とマスク機能のためのCSS
+ */
+
+/* ベース動画コンテナ */
+.video-container {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* 動画要素の基本スタイル */
+.video-element {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+/* 人物マスク用のスタイル */
+
+/* 1. 楕円マスク（顔の輪郭に合わせた楕円形） */
+.video-mask-oval {
+    -webkit-clip-path: ellipse(40% 50% at 50% 45%);
+    clip-path: ellipse(40% 50% at 50% 45%);
+}
+
+/* 2. 円形マスク（シンプルな円形） */
+.video-mask-circle {
+    -webkit-clip-path: circle(35% at 50% 45%);
+    clip-path: circle(35% at 50% 45%);
+}
+
+/* 3. 人物の顔に特化した楕円マスク（apple.mp4用に最適化） */
+.video-mask-portrait {
+    -webkit-clip-path: ellipse(35% 45% at 50% 40%);
+    clip-path: ellipse(35% 45% at 50% 40%);
+}
+
+/* apple.mp4専用の最適化マスク */
+.video-mask-apple {
+    -webkit-clip-path: ellipse(38% 48% at 50% 42%);
+    clip-path: ellipse(38% 48% at 50% 42%);
+}
+
+/* 4. より細長い楕円マスク */
+.video-mask-face {
+    -webkit-clip-path: ellipse(30% 40% at 50% 42%);
+    clip-path: ellipse(30% 40% at 50% 42%);
+}
+
+/* 5. カスタムSVGマスク（より精密な人物輪郭） */
+.video-mask-custom {
+    -webkit-clip-path: polygon(
+        30% 20%, 70% 20%, 
+        85% 35%, 85% 65%, 
+        70% 80%, 30% 80%, 
+        15% 65%, 15% 35%
+    );
+    clip-path: polygon(
+        30% 20%, 70% 20%, 
+        85% 35%, 85% 65%, 
+        70% 80%, 30% 80%, 
+        15% 65%, 15% 35%
+    );
+}
+
+/* 動画サイズバリエーション */
+.video-small {
+    width: 200px;
+    height: 200px;
+}
+
+.video-medium {
+    width: 300px;
+    height: 300px;
+}
+
+.video-large {
+    width: 400px;
+    height: 400px;
+}
+
+/* ホバーエフェクト */
+.video-container:hover .video-element {
+    transform: scale(1.05);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 動画コントロールのカスタマイズ */
+.video-element::-webkit-media-controls {
+    display: none;
+}
+
+.video-element::-webkit-media-controls-enclosure {
+    display: none;
+}
+
+/* カスタムコントロール */
+.video-controls {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 16px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-container:hover .video-controls {
+    opacity: 1;
+}
+
+.video-control-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.video-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .video-large {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .video-medium {
+        width: 220px;
+        height: 220px;
+    }
+    
+    .video-small {
+        width: 160px;
+        height: 160px;
+    }
+}
+
+/* Apple風のグラデーション背景 */
+.video-background-gradient {
+    background: linear-gradient(
+        135deg,
+        #667eea 0%,
+        #764ba2 100%
+    );
+}
+
+/* 動画読み込み中のプレースホルダー */
+.video-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    animation: loading 1s linear infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 14px;
+}
+
+@keyframes loading {
+    0% { background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+    100% { background-position: 20px 20px, 20px 30px, 30px 10px, 10px 20px; }
+}
+
+/* マスクプレビュー用のオーバーレイ */
+.mask-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-container.show-mask-preview .mask-preview-overlay {
+    opacity: 1;
+}
+
+/* マスク選択UI */
+.mask-selector {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-container:hover .mask-selector {
+    opacity: 1;
+}
+
+.mask-option {
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s ease;
+}
+
+.mask-option:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.mask-option.active {
+    background: #007AFF;
+    color: white;
+}
