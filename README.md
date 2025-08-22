@@ -1,348 +1,202 @@
-# Mac Status PWA
+# Mac Status PWA – Ollama 対応版 README
 
-**プライバシー重視のMacシステム監視Progressive Web Application**
+このリポジトリは **macOS のシステム状況を PWA で可視化**し、チャット欄から
+- 日常会話（スモールトーク）
+- CPU/メモリ/ディスク/プロセスなどの**システム質問**
 
-リアルタイムでMacのシステム状態を監視し、自然な日本語でAIアシスタントと対話できるPWAアプリケーションです。全ての処理がローカルで実行され、データが外部に送信されることはありません。
-
-![Mac Status PWA](https://img.shields.io/badge/PWA-Ready-brightgreen) ![Platform](https://img.shields.io/badge/Platform-macOS-blue) ![License](https://img.shields.io/badge/License-MIT-green)
-
-## 🌟 主な機能
-
-### 📊 **リアルタイムシステム監視**
-- **CPU使用率**: リアルタイムでCPU使用状況を表示
-- **メモリ使用量**: 使用率と詳細な容量情報
-- **ディスク使用量**: ストレージの使用状況
-- **プロセス監視**: 上位プロセスの表示
-- **自動更新**: 2秒ごとの自動データ更新
-
-### 🤖 **AIチャットアシスタント**
-- **自然な日本語対話**: システム状態について質問可能
-- **インテリジェント応答**: 質問内容に応じて適切な情報を提供
-- **多様な応答パターン**: 同じ質問でも異なる応答を提供
-- **キーワード検出**: CPU、メモリ、ディスクなど特定の質問に最適化
-- **フォールバック機能**: ELYZAモデル未使用時も高品質な応答
-- **視覚的に魅力的**: マークダウン形式で見やすい応答
-- **包括的情報提供**: 実装済み機能は詳細情報、未実装機能は代替手段を提案
-- **パーソナライゼーション**: 会話履歴とユーザー設定の学習機能（開発中）
-- **リアルタイム情報**: 最新のシステム状態を反映した回答
-
-### 🎬 **動画統合機能**
-- **人物フォーカス表示**: CSSオーバーレイで人物部分のみを自然に表示
-- **音声対応**: ユーザーインタラクション後に音声ON
-- **レスポンシブ動画**: デスクトップ・タブレット・モバイル対応
-- **クリーンデザイン**: 枠線なしのシンプルで洗練された表示
-- **自動再生**: ページ読み込み時に自動開始
-- **パフォーマンス最適化**: 軽量で高速な動画読み込み
-
-### 📱 **Progressive Web App**
-- **インストール可能**: ブラウザからアプリとしてインストール
-- **オフライン対応**: Service Workerによるオフライン機能
-- **レスポンシブデザイン**: モバイル・デスクトップ対応
-- **Apple風デザイン**: macOSネイティブライクなUI
-
-### 🔒 **プライバシー・セキュリティ**
-- **完全ローカル処理**: 全てのデータがローカルで処理
-- **外部通信なし**: インターネット接続不要
-- **セキュアな通信**: WebSocketによる暗号化通信
-- **データ保護**: 個人情報の外部流出なし
-
-## 🚀 クイックスタート
-
-### 必要な環境
-- **macOS**: 10.15以降（推奨）
-- **Python**: 3.12以降
-- **メモリ**: 8GB以上（推奨）
-- **ディスク容量**: 5GB以上の空き容量
-
-### インストール
-
-1. **リポジトリのクローン**
-   ```bash
-   git clone https://github.com/leadlea/apple.git
-   cd apple
-   ```
-
-2. **自動セットアップ**
-   ```bash
-   python setup.py
-   ```
-
-3. **サーバーの起動**
-   ```bash
-   python working_server.py
-   ```
-
-4. **ブラウザでアクセス**
-   - メイン版: http://localhost:8002
-   - 修正版: http://localhost:8002/fixed （推奨）
-   - デバッグ版: debug_test.html
-
-### PWAとしてインストール
-
-1. ブラウザでアプリを開く
-2. アドレスバーのインストールアイコンをクリック
-3. 「インストール」を選択
-4. デスクトップアプリとして利用可能
-
-## 📁 プロジェクト構造
-
-```
-mac-status-pwa/
-├── README.md                    # このファイル
-├── INSTALL.md                   # 詳細インストールガイド
-├── TROUBLESHOOTING.md           # トラブルシューティング
-├── working_server.py            # メインサーバー（推奨）
-├── fixed_index.html             # 修正版フロントエンド（推奨）
-├── debug_test.html              # デバッグ用テストページ
-├── setup.py                     # 自動セットアップスクリプト
-├── requirements.txt             # Python依存関係
-├── frontend/                    # フロントエンドファイル
-│   ├── index.html              # メインHTML
-│   ├── app.js                  # JavaScript
-│   ├── styles.css              # Apple風CSS
-│   ├── manifest.json           # PWAマニフェスト
-│   ├── sw.js                   # Service Worker
-│   └── icons/                  # PWAアイコン
-├── backend/                     # バックエンドコンポーネント
-│   ├── main.py                 # FastAPIメインアプリ
-│   ├── system_monitor.py       # システム監視
-│   ├── websocket_server.py     # WebSocket通信
-│   └── ...                     # その他のモジュール
-├── config/                      # 設定ファイル
-│   ├── production.py           # 本番設定
-│   └── security.py             # セキュリティ設定
-├── tests/                       # テストスイート
-├── demo_data/                   # デモ用サンプルデータ
-└── .github/workflows/           # CI/CD設定
-```
-
-## 💬 使用方法
-
-### 基本的な質問例
-
-```
-「こんにちは」                    → 挨拶とシステム概要
-「CPUの使用率はどうですか？」      → CPU詳細情報と上位プロセス
-「メモリの状況を教えて」          → メモリ使用状況の詳細分析
-「ディスクの容量は？」           → ディスク使用状況と空き容量
-「システム全体の状況は？」        → 包括的なシステム健康状態
-「システムが重い理由は？」        → パフォーマンス分析と提案
-```
-
-### 実際の応答例
-
-**質問**: "CPUの使用率はどうですか？"
-**応答**: 
-```
-🖥️ 現在のCPU使用率は 25.4% です。
-
-✅ CPU使用率は低く、システムに余裕があります。
-
-上位プロセス:
-1. Chrome: 8.2%
-2. Xcode: 3.1%
-3. Slack: 1.5%
-```
-
-**質問**: "メモリの状況を教えて"
-**応答**:
-```
-💾 現在のメモリ使用状況:
-
-使用率: 68.1%
-使用量: 10.9GB / 16.0GB
-空き容量: 5.1GB
-
-🟡 メモリ使用率がやや高めです。
-```
-
-### システム監視
-
-- **ダッシュボード**: 上部のカードでリアルタイム監視
-- **詳細情報**: チャットで具体的な質問
-- **アラート**: 使用率が高い場合の警告表示
-- **履歴**: 会話履歴の保持
-
-## 🔧 開発・カスタマイズ
-
-### 開発環境のセットアップ
-
-```bash
-# 仮想環境の作成
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-
-# 依存関係のインストール
-pip install -r requirements.txt
-
-# 開発サーバーの起動
-python working_server.py
-```
-
-### 設定のカスタマイズ
-
-**config/production.py** でサーバー設定を変更：
-```python
-SERVER_CONFIG = {
-    "host": "127.0.0.1",
-    "port": 8002,
-    "debug": False
-}
-```
-
-**frontend/styles.css** でデザインをカスタマイズ：
-- Apple風カラーパレット
-- レスポンシブデザイン
-- アニメーション効果
-
-### テスト実行
-
-```bash
-# 全テストの実行
-python -m pytest tests/ -v
-
-# 統合テストの実行
-python demo_system_integration.py
-
-# WebSocket通信テスト
-python test_working_server.py
-```
-
-## 📊 パフォーマンス
-
-### システム要件
-- **応答時間**: 平均2-4秒
-- **メモリ使用量**: 約150-400MB
-- **CPU使用率**: 通常時1-5%
-- **ディスク使用量**: 約50MB
-
-### 最適化
-- **M1チップ対応**: Apple Siliconに最適化
-- **効率的な監視**: 最小限のシステム負荷
-- **キャッシュ機能**: 高速な応答
-- **非同期処理**: ノンブロッキング動作
-
-## 🛠️ トラブルシューティング
-
-### よくある問題
-
-**ダッシュボードに数値が表示されない**
-```bash
-# 修正版を使用
-http://localhost:8002/fixed
-```
-
-**WebSocket接続エラー**
-```bash
-# ポートの確認
-lsof -i :8002
-
-# サーバーの再起動
-python working_server.py
-```
-
-**PWAがインストールできない**
-- HTTPSまたはlocalhostでアクセス
-- ブラウザのPWA機能を有効化
-- キャッシュをクリア
-
-詳細は [TROUBLESHOOTING.md](TROUBLESHOOTING.md) を参照してください。
-
-## 🧪 テスト・デバッグ
-
-### デバッグツール
-
-1. **デバッグテストページ**
-   ```bash
-   # ブラウザで開く
-   file:///path/to/debug_test.html
-   ```
-
-2. **統合テスト**
-   ```bash
-   python demo_system_integration.py
-   ```
-
-3. **ブラウザ開発者ツール**
-   - F12でコンソールを開く
-   - WebSocket通信を監視
-   - エラーログを確認
-
-### テスト結果
-- **テスト成功率**: 91.6% (296/323テスト)
-- **統合テスト**: 全7カテゴリで動作確認
-- **パフォーマンステスト**: M1 Mac最適化確認
-
-## 📚 ドキュメント
-
-- **[INSTALL.md](INSTALL.md)**: 詳細なインストール手順
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**: 問題解決ガイド
-- **[demo_data/README.md](demo_data/README.md)**: デモデータの使用方法
-- **[.kiro/specs/](./kiro/specs/)**: 設計仕様書
-
-## 🤝 コントリビューション
-
-1. このリポジトリをフォーク
-2. 機能ブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. Pull Requestを作成
-
-### 開発ガイドライン
-- PEP 8スタイルガイドに従う
-- 新機能にはテストを追加
-- ドキュメントを更新
-- 全テストが通ることを確認
-
-## 📄 ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。詳細は [LICENSE](LICENSE) ファイルを参照してください。
-
-## 🙏 謝辞
-
-- **Apple**: デザインインスピレーション
-- **FastAPI**: 高速なWebフレームワーク
-- **psutil**: システム監視ライブラリ
-- **WebSocket**: リアルタイム通信
-
-## 📞 サポート
-
-- **Issues**: [GitHub Issues](https://github.com/leadlea/apple/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/leadlea/apple/discussions)
-- **Email**: プロジェクトメンテナーまで
-
-## 🔄 更新履歴
-
-### v1.2.0 (2025-08-01) - PWA動画統合完了
-- ✅ **動画表示機能**: PWAに動画表示機能を完全統合
-- ✅ **人物フォーカス**: CSSオーバーレイで人物部分のみを自然に表示
-- ✅ **クリーンデザイン**: 紫の枠線を削除してシンプルな表示
-- ✅ **音声対応**: ユーザーインタラクション後に音声ON
-- ✅ **レスポンシブ動画**: デスクトップ・タブレット・モバイル対応
-- ✅ **パフォーマンス最適化**: 軽量で高速な動画読み込み
-- ✅ **統合テスト**: 動画統合機能の包括的テスト
-
-### v1.1.0 (2025-08-01) - チャット応答システム大幅改善
-- ✅ **メッセージ処理の修正**: 複数のメッセージ形式に対応
-- ✅ **応答の多様化**: 同じ質問に対して異なる応答パターンを提供
-- ✅ **視覚的改善**: マークダウン形式で見やすい応答表示
-- ✅ **キーワード検出強化**: より柔軟で正確な質問理解
-- ✅ **プロセス情報詳細化**: 実行中アプリの詳細情報表示
-- ✅ **パーソナライゼーション基盤**: 会話履歴管理とユーザー設定追跡
-- ✅ **エラーハンドリング改善**: 空メッセージや不明な質問への適切な対応
-- ✅ **包括的テスト**: 10種類の質問パターンで動作確認
-
-### v1.0.0 (2024-07-31)
-- ✅ 初回リリース
-- ✅ リアルタイムシステム監視機能
-- ✅ AIチャットアシスタント
-- ✅ PWA対応
-- ✅ Apple風デザイン
-- ✅ 完全ローカル処理
-- ✅ M1チップ最適化
-- ✅ 包括的テストスイート
-- ✅ 詳細ドキュメント
+に答える **FastAPI + WebSocket** サーバです。  
+LLM は **Ollama（llama3.1:8b-instruct-q4_K_M）** を利用し、失敗時は**安全なフォールバック応答**に切替わります。
 
 ---
 
-**Mac Status PWA** - プライバシーを重視するMacユーザーのための、美しく機能的なシステム監視ツール 🍎✨
+## 今回の主な更新（2025-08）
+
+- **ELYZA 依存を削除**し、**Ollama** へ完全移行
+- 「おはよう」等の**雑談は `/api/chat`** で軽量応答、
+  **システム質問は `/api/generate`** で状況（CPU/メモリ等）を織り込んで回答
+- **起動時ウォームアップ**（1トークン生成 + `/api/tags` Ping）で初回タイムアウトを回避
+- **段階的タイムアウト & 自動リトライ**を実装（デフォルト：180s → 360s で再試行）
+- 依存関係を整理（`fastapi[standard]`, `requests`, `psutil`）
+- `README.md` を全面更新（このファイル）
+
+> **注**: cred の自動生成等で環境変数を変更したくないケースを考慮し、**環境変数は必須ではありません**。すべて既定値で動作します。
+
+---
+
+## 動作要件
+
+- macOS / Linux（ローカル想定）
+- Python **3.12** 以上推奨
+- [Ollama](https://ollama.com/) が動作していること
+- モデル `llama3.1:8b-instruct-q4_K_M` を Pull 済み
+
+```bash
+ollama pull llama3.1:8b-instruct-q4_K_M
+```
+
+---
+
+## セットアップ
+
+```bash
+cd ~/apple
+python3.12 -m venv venv
+source venv/bin/activate
+
+python -m pip install -U pip
+python -m pip install "fastapi[standard]" psutil requests
+```
+
+> まとめて入れる場合は `requirements.txt` を利用：
+> ```txt
+> fastapi[standard]
+> psutil
+> requests
+> ```
+> ```bash
+> python -m pip install -r requirements.txt
+> ```
+
+---
+
+## 起動
+
+```bash
+python working_server.py
+# デフォルト: 0.0.0.0:8002 で待受
+```
+
+- 初回は **自動ウォームアップ** を行います（`/api/tags` → 1トークン生成）。
+- ブラウザで `http://localhost:8002` または `http://localhost:8002/fixed` にアクセス。
+
+---
+
+## 使い方
+
+### 1) 雑談（スモールトーク）
+- 例：「おはよう！」「ありがとう」「了解です」など短い一言
+- 内部では **`/api/chat`** を使用して自然な返答（1〜4文程度）を生成します。
+
+### 2) システム質問
+- 例：「CPUの状況は？」「実行中のアプリは？」「メモリは？」「ディスク容量は？」
+- 内部では **`/api/generate`** を使用し、**現在の CPU/メモリ/ディスク/上位プロセス**をプロンプトに埋め込んで回答します。
+
+### 3) フォールバック
+- LLM がタイムアウト/失敗した場合でも、**定型の有用な回答**を返します（安全動作）。
+
+---
+
+## ウォームアップ & タイムアウト設計
+
+- 起動時に **`/api/tags`** Ping と **1トークン生成**を自動実行 → モデル初回ロードの待ち時間を短縮
+- 生成呼び出しは **段階的タイムアウト**（既定 180s → 360s に再試行）+ リトライ（既定 1 回）
+- さらに手動でウォームアップしたい場合：
+
+```bash
+curl -sS http://127.0.0.1:11434/api/generate \
+  -H 'Content-Type: application/json' \
+  -d '{"model":"llama3.1:8b-instruct-q4_K_M","prompt":"OK","options":{"num_predict":1},"stream":false}' >/dev/null
+```
+
+> **環境変数は未設定でOK**（cred への影響を避けるため）。既定値のままでも実運用可能。
+
+---
+
+## API / メッセージ仕様（クライアント ↔ サーバ）
+
+### WebSocket: `/ws`
+
+- `ping` … サーバ応答: `pong`
+- `system_status_request` … サーバ応答: `system_status_response`
+- `chat_message` … 入力例
+  ```json
+  {
+    "type": "chat_message",
+    "data": { "message": "CPUの状況を教えて" }
+  }
+  ```
+  サーバ応答: `chat_response` に `"data.message"` としてテキストが返る
+
+### ブロードキャスト
+- 2秒間隔で `system_status_update` を全接続へ送信
+
+---
+
+## よくあるトラブルと対処
+
+### `ModuleNotFoundError: No module named 'fastapi'`
+```bash
+python -m pip install "fastapi[standard]" psutil requests
+```
+
+### `Read timed out`（Ollama）
+- 自動ウォームアップ完了まで待つ or 上記の **手動ウォームアップ**を一度実行
+- モデルが Pull 済みか確認：`ollama pull llama3.1:8b-instruct-q4_K_M`
+
+### `psutil` 未導入
+```bash
+python -m pip install psutil
+```
+
+### venv が効いていない
+```bash
+which python
+python -c "import sys; print(sys.executable)"
+# .../apple/venv/bin/python であればOK
+```
+
+---
+
+## 正しい `jq + curl` の例（スマートクオート禁止）
+
+> “ ” ‘ ’ の **スマートクオートは使用しない**でください。**半角の ' と " のみ**を使います。
+
+```bash
+jq -n --arg p '量子コンピューターについて小学生向けに説明して' \
+'{
+  model: "llama3.1:8b-instruct-q4_K_M",
+  prompt: $p,
+  options: { num_predict: 80, temperature: 0.2, top_p: 0.9, repeat_penalty: 1.1, stop: ["\n\n"] },
+  keep_alive: "10m",
+  stream: false
+}' \
+| curl -sS -H 'Content-Type: application/json' --data-binary @- http://127.0.0.1:11434/api/generate \
+| jq -r '.response // .error'
+```
+
+---
+
+## ファイル構成（抜粋）
+
+```
+apple/
+├─ working_server.py        # サーバ本体（Ollama + Smalltalk + Warmup + Fallback）
+├─ frontend/                # PWA フロント（/static にマウント）
+├─ fixed_index.html         # 固定版 UI（/fixed で配信）
+└─ README.md                # このファイル
+```
+
+---
+
+## ランタイム既定値（参考）
+
+コード内既定値（環境変数未使用でも可）
+
+- `OLLAMA_BASE = "http://127.0.0.1:11434"`
+- `OLLAMA_MODEL = "llama3.1:8b-instruct-q4_K_M"`
+- `OLLAMA_TIMEOUT_SEC = 180` / `OLLAMA_MAX_TIMEOUT_SEC = 360`
+- `OLLAMA_RETRIES = 2`
+- `keep_alive = "30m"`
+
+> どうしても変更したい場合のみ、起動前に環境変数を設定してください（**通常は不要**）。
+
+---
+
+## ライセンス / 注意
+- 本実装はローカル開発用途を想定。外部公開時は認証/レート制限等の追加実装を推奨。
+- システム情報の収集は `psutil` でローカルマシン内に完結します。
+
+---
+
+### 更新履歴
+- 2025-08: Ollama 完全移行、雑談チャット導入、ウォームアップ/リトライ実装、README更新
